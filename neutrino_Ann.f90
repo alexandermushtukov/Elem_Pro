@@ -67,7 +67,7 @@ character(len=100):: file_name
   200 format (8(es11.4,"   "),1(I6,"   "))
   201 format (7(es11.4,"   "),3(I6,"   "))
   202 format (1(A12),(es8.2))
-  b=0.05d0
+  b=2.d0
   write(file_name,202)"./res/res_b_",b
   write(*,*)"# file_name=",file_name; write(*,*)
   open (unit = 20, file = file_name)
@@ -81,7 +81,7 @@ character(len=100):: file_name
     T_keV=10.d0**lg_TkeV
     T10=T_keV*1.1602d-3 !*1.1602d-3
     B12=b*44.12d0
-    lg_n_e_ini30=1.d0!-5.d0
+    lg_n_e_ini30=-5.d0
     !write(*,*)lg_TkeV,lg_n_e_ini30
     do while(lg_n_e_ini30.le.2.d0)
       n_e_ini30=10.d0**lg_n_e_ini30
@@ -147,7 +147,7 @@ real*8::sum_array  !==function==!
   do while(det_n.eq.11)
   !do while(n_sum.le.n_max)
     if(n_sum.le.8)then
-      call sum_over_diagonal_par(n_sum,b,T,Z1,Z2,mu,res_add)
+      call sum_over_diagonal_par(n_sum,n_max_e,n_max_p,b,T,Z1,Z2,mu,res_add)
       !write(*,*)res_add
     else
       !call sum_over_diagonal(n_sum,b,T,Z1,Z2,mu,res_add)
@@ -196,10 +196,10 @@ contains
 
 
 
-  subroutine sum_over_diagonal_par(n_sum,b,T,Z1,Z2,mu,res)
+  subroutine sum_over_diagonal_par(n_sum,n_max_e,n_max_p,b,T,Z1,Z2,mu,res)
   use omp_lib 
   implicit none
-  integer,intent(in)::n_sum
+  integer,intent(in)::n_sum,n_max_e,n_max_p
   real*8,intent(in)::b,T,Z1,Z2,mu
   integer::n_e,n_p,n_e_task,n_p_task
   real*8::res
@@ -211,7 +211,11 @@ contains
     !$omp parallel private(n_e_task,n_p_task) firstprivate(n_sum) reduction(+: f)
     n_e_task=omp_get_thread_num()
     n_p_task=n_sum-n_e_task
-    f=NeutrinoSyn_intZe(b,T,n_e_task,n_p_task,Z1,Z2,mu)
+    if((n_e_task.le.n_max_e).and.(n_p_task.le.n_max_p))then
+      f=NeutrinoSyn_intZe(b,T,n_e_task,n_p_task,Z1,Z2,mu)
+    else
+      f=0.d0
+    end if
     !$omp end parallel
     res=f
   return
@@ -315,7 +319,6 @@ contains
         n_e_task=num_new(added_num(i)) 
         n_p_task=n_sum-n_e_task
         if((n_e_task.le.n_max_e).and.(n_p_task.le.n_max_p))then
-          !write(*,*)"## ",n_p_task,n_max_p
           fun_task=NeutrinoSyn_intZe(b,T,n_e_task,n_p_task,Z1,Z2,mu)
         else 
           fun_task=0.d0
@@ -372,7 +375,7 @@ contains
     else
       res=NeutrinoSyn_intZe(b,T,n_e,n_p,Z1,(Z1+Z2)/2,mu)+NeutrinoSyn_intZe(b,T,n_e,n_p,(Z1+Z2)/2,Z2,mu)
     end if
-    write(*,*)"#NeutrinoSyn_intZe: ",T,n_e+n_p,n_e,n_p,Z1,Z2,mu,res
+    !write(*,*)"#NeutrinoSyn_intZe: ",T,n_e+n_p,n_e,n_p,Z1,Z2,mu,res
   return
   end function NeutrinoSyn_intZe
 
@@ -414,7 +417,7 @@ contains
       i=i+1
     end do
     NeutrinoSyn_intZe_n=res
-    write(*,*)"#NeutrinoSyn_intZe_n: ",nn,res
+    !write(*,*)"#NeutrinoSyn_intZe_n: ",nn,res
   return
   end function NeutrinoSyn_intZe_n
 
@@ -435,7 +438,7 @@ contains
       if( (abs((res2-res1)/res2).lt.eps).or.((res2-res1).eq.0.d0) )then
         det=det-1
       end if
-      if(nn.gt.n_max)then
+      if(nn.gt.nn_max)then
         det=11
       end if
       res1=res2
@@ -499,7 +502,7 @@ contains
       i=i+1
     end do
     NeutrinoSyn_intZp_n=res
-    !write(*,*)"NeutrinoSyn_intZp_n ",res
+    !write(*,*)"#NeutrinoSyn_intZp_n ",res,Zp1,Zp2!,Z_i,b,n_e,n_p,mu,T
   return
   end function NeutrinoSyn_intZp_n
 

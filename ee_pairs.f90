@@ -229,7 +229,7 @@ contains
   use EE_pairs_mag_help
   implicit none
   real*8,intent(in)::b,mu,TkeV
-  real*8::n_e30,n_p30,eps,g_n,sum_e,sum_p,n_e30_add,n_p30_add
+  real*8::n_e30,n_p30,eps,g_n,sum_e,sum_p,n_e30_add,n_p30_add,param
   integer::i,n_max,det
   real*8::int_ImproperInt_simpson  !==function==!
   integer::n_max_e,n_max_p         !==the maximal Landau level numbers for electrons and positrons==!
@@ -243,6 +243,7 @@ contains
       n_max=7*TkeV/(b*511.d0)+15
     end if
     i=0; n_max_e=0; n_max_p=0
+    param=1.d-7
     n_e30=0.d0
     n_p30=0.d0
     sum_e=n_e30
@@ -253,15 +254,15 @@ contains
         n_mod=i
         if(i.eq.0)then; g_n=1.d0; else; g_n=2.d0; end if
         n_e30_add = 2*g_n*int_ImproperInt_simpson(Ie_mag ,0.d0,1.d-3,eps)
-        if(n_e30_add.lt.(1.d-6*n_e30))then; n_max_e=min(n_max_e,i); else; n_max_e=i; end if
+        if(n_e30_add.lt.(param*n_e30))then; n_max_e=min(n_max_e,i); else; n_max_e=i; end if
         n_e30     = n_e30+n_e30_add
         if(mu_mod.le.10.d0*TkeV_mod)then
           n_p30_add = 2*g_n*int_ImproperInt_simpson(Ip_mag ,0.d0,1.d-3,eps)
-          if(n_p30_add.lt.(1.d-6*n_p30))then; n_max_p=min(n_max_p,i); else; n_max_p=i; end if
+          if(n_p30_add.lt.(param*n_p30))then; n_max_p=min(n_max_p,i); else; n_max_p=i; end if
           n_p30     = n_p30+n_p30_add
         else
           n_p30_add = 2*g_n*int_ImproperInt_simpson(Ip_mag2,0.d0,1.d-3,eps)/exp(mu_mod/TkeV_mod)
-          if(n_p30_add.lt.(1.d-6*n_p30))then; n_max_p=min(n_max_p,i); else; n_max_p=i; end if
+          if(n_p30_add.lt.(param*n_p30))then; n_max_p=min(n_max_p,i); else; n_max_p=i; end if
           n_p30     = n_p30+n_p30_add
         end if
         i=i+1
