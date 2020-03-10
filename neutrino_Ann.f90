@@ -61,14 +61,14 @@ end subroutine NeutrinoEmAnnih
 subroutine Test_NeutrinoEmAnnih()
 implicit none
 real*8::T_kev,b,T10,lg_TkeV,B12,Q23_app,n_e_ini30,lg_n_e_ini30,Q23,mu_keV
-integer::n_sum_max
+integer::n_sum_max,n_max_e,n_max_p
 character(len=100):: file_name
 
   200 format (8(es11.4,"   "),1(I6,"   "))
-  201 format (7(es11.4,"   "),1(I6,"   "))
+  201 format (7(es11.4,"   "),3(I6,"   "))
   202 format (1(A12),(es8.2))
   b=0.05d0
-  write(file_name,202)"./res/res_ba",b
+  write(file_name,202)"./res/res_b_",b
   write(*,*)"# file_name=",file_name; write(*,*)
   open (unit = 20, file = file_name)
   write(20,*)"# b=",b
@@ -81,18 +81,18 @@ character(len=100):: file_name
     T_keV=10.d0**lg_TkeV
     T10=T_keV*1.1602d-3 !*1.1602d-3
     B12=b*44.12d0
-    lg_n_e_ini30=0.5d0 !-5.d0
+    lg_n_e_ini30=1.d0!-5.d0
     !write(*,*)lg_TkeV,lg_n_e_ini30
     do while(lg_n_e_ini30.le.2.d0)
       n_e_ini30=10.d0**lg_n_e_ini30
       !call EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu_keV,n_max)
       call NeutrinoEmAnnih(T10,B12,Q23_app)
-      call NeutrinoAnn(b,T_keV,n_e_ini30,Q23,mu_keV,n_sum_max)
+      call NeutrinoAnn(b,T_keV,n_e_ini30,Q23,mu_keV,n_sum_max,n_max_e,n_max_p)
       open(unit = 20, file = file_name, status = 'old',form='formatted',position="append")
       !write(*,200)b,lg_TkeV,T_keV,lg_n_e_ini30,n_e_ini30,res,Q23_app,res/Q23_app,n_sum_max
       !write(*,201)b,T_keV,n_e_ini30,mu_keV,res,Q23_app,res/Q23_app,n_sum_max
-      write(*,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,Q23/Q23_app,n_sum_max
-      write(20,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,Q23/Q23_app,n_sum_max
+      write(*,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,Q23/Q23_app,n_sum_max,n_max_e,n_max_p
+      write(20,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,Q23/Q23_app,n_sum_max,n_max_e,n_max_p
       close(20)
       lg_n_e_ini30=lg_n_e_ini30+0.1d0
     end do
@@ -116,7 +116,7 @@ end subroutine Test_NeutrinoEmAnnih
 ! res is represented in units of [1.e23 erg/s/cm^3]
 ! n_sum_max - the maximal n_e+n_p taken into accpount in calculations.
 !==================================================================================================
-subroutine NeutrinoAnn(b,TkeV,n_e_ini30,res,mu_keV,n_sum_max)
+subroutine NeutrinoAnn(b,TkeV,n_e_ini30,res,mu_keV,n_sum_max,n_max_e,n_max_p)
 implicit none
 real*8,intent(in)::b,TkeV,n_e_ini30
 integer::n_e,n_p,n_max,n_max_e,n_max_p,det,n_sum,det_n,i,n_sum_max
@@ -131,7 +131,7 @@ real*8::sum_array  !==function==!
   call EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu_keV,n_max,n_max_e,n_max_p)   
   T=TkeV/511
   mu=mu_keV/511
-  write(*,*)b,TkeV,mu,n_max
+  !write(*,*)b,TkeV,mu,n_max
   !read(*,*)
 
   !n_max=1000   !==the actual n_max is found later authomatically==!
@@ -143,7 +143,7 @@ real*8::sum_array  !==function==!
   Z2=  sqrt(T**2+2*T)*4 !+2.d0
 
   mas(1:1000)=0.d0; det_n=11
-  n_sum=32
+  n_sum=0
   do while(det_n.eq.11)
   !do while(n_sum.le.n_max)
     if(n_sum.le.8)then
@@ -414,7 +414,7 @@ contains
       i=i+1
     end do
     NeutrinoSyn_intZe_n=res
-    !write(*,*)res
+    write(*,*)"#NeutrinoSyn_intZe_n: ",nn,res
   return
   end function NeutrinoSyn_intZe_n
 
