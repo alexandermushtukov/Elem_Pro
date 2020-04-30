@@ -41,7 +41,8 @@ objects_math =	./obj/mf_bessel.o \
 		./obj/mf_laguer_n.o \
 		./obj/mf_matrix_matrix.o \
 		./obj/mf_numbers.o \
-		./obj/mf_vector_sk_mult.o
+		./obj/mf_vector_sk_mult.o \
+		./obj/mf_coord_sys.o
 
 objects_phys =	./obj/PhFun_eMaxvell.o \
 		./obj/PhFun_ComptonBF_cons_laws.o \
@@ -52,10 +53,19 @@ objects_phys =	./obj/PhFun_eMaxvell.o \
 		./obj/PhFun_magnetic_absorb.o \
 		./obj/PhFun_PlasmaDispFun.o \
 		./obj/PhFun_ComptonBF_Stokes.o \
-		./obj/PhFun_Gaunt_factors.o
+		./obj/PhFun_Gaunt_factors.o \
+		./obj/PhFun_MagneticDipole.o \
+		./obj/PhFun_GR_app.o \
+		./obj/PhFun_Polarization.o \
+		./obj/PhFun_dielec_tensor.o
 
-c : $(objects) $(objects_math) $(objects_phys)
-	gfortran -fopenmp -o c $(objects) $(objects_math) $(objects_phys)
+objects_astro =	./obj/af_ref_frame.o
+
+
+
+c : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
+	gfortran -fopenmp -o c $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
+
 
 ./obj/c.o : c.f90	
 	gfortran -c -o ./obj/c.o c.f90
@@ -85,6 +95,10 @@ c : $(objects) $(objects_math) $(objects_phys)
 	gfortran -c -o ./obj/mf_fnlib_r9aimp.o mf_fnlib_r9aimp.f
 
 
+./obj/af_ref_frame.o : ../AstroFun/af_ref_frame.f90	
+	gfortran -c -o ./obj/af_ref_frame.o ../AstroFun/af_ref_frame.f90
+
+
 ./obj/PhFun_eMaxvell.o : ../PhFun/PhFun_eMaxvell.f90	
 	gfortran -c -o ./obj/PhFun_eMaxvell.o ../PhFun/PhFun_eMaxvell.f90
 ./obj/PhFun_ComptonBF_cons_laws.o : ../PhFun/PhFun_ComptonBF_cons_laws.f90	
@@ -105,8 +119,23 @@ c : $(objects) $(objects_math) $(objects_phys)
 	gfortran -c -o ./obj/PhFun_Gaunt_factors.o ../PhFun/PhFun_Gaunt_factors.f90
 ./obj/PhFun_PlasmaDispFun.o : ../PhFun/PhFun_PlasmaDispFun.f
 	gfortran -c -o ./obj/PhFun_PlasmaDispFun.o ../PhFun/PhFun_PlasmaDispFun.f
+./obj/PhFun_MagneticDipole.o : ../PhFun/PhFun_MagneticDipole.f90
+	gfortran -c -o ./obj/PhFun_MagneticDipole.o ../PhFun/PhFun_MagneticDipole.f90
+./obj/PhFun_GR_app.o : ../PhFun/PhFun_GR_app.f90
+	gfortran -c -o ./obj/PhFun_GR_app.o ../PhFun/PhFun_GR_app.f90
+./obj/PhFun_Polarization.o : ../PhFun/PhFun_Polarization.f90
+	gfortran -c -o ./obj/PhFun_Polarization.o ../PhFun/PhFun_Polarization.f90
+./obj/PhFun_dielec_tensor.o : ../PhFun/PhFun_dielec_tensor.f90
+	gfortran -c -o ./obj/PhFun_dielec_tensor.o ../PhFun/PhFun_dielec_tensor.f90
 
 
+
+./obj/mf_tcrUL_VF.o : ../mf/mf_tcrUL_VF.f	
+	gfortran -c -o ./obj/mf_tcrUL_VF.o ../mf/mf_tcrUL_VF.f
+./obj/mf_expmag_VF.o : ../mf/mf_expmag_VF.f	
+	gfortran -c -o ./obj/mf_expmag_VF.o ../mf/mf_expmag_VF.f
+./obj/mf_bessel_VF.o : ../mf/mf_bessel_VF.f	
+	gfortran -c -o ./obj/mf_bessel_VF.o ../mf/mf_bessel_VF.f
 ./obj/mf_bessel.o : ../mf/mf_bessel.f90	
 	gfortran -c -o ./obj/mf_bessel.o ../mf/mf_bessel.f90
 ./obj/mf_c.o : ../mf/mf_c.f90	
@@ -140,15 +169,15 @@ c : $(objects) $(objects_math) $(objects_phys)
 ./obj/mf_int_gauss.o : ../mf/mf_int_gauss.f90	
 	gfortran -c -o ./obj/mf_int_gauss.o ../mf/mf_int_gauss.f90
 ./obj/mf_intGauss.o : ../mf/mf_intGauss.FOR
-	gfortran -std=legacy -c -o ./obj/mf_intGauss.o ../mf/mf_intGauss.FOR
+	gfortran -c -o ./obj/mf_intGauss.o ../mf/mf_intGauss.FOR
 ./obj/mf_intGauss_p.o : ../mf/mf_intGauss_p.FOR	
-	gfortran -std=legacy -c -o ./obj/mf_intGauss_p.o ../mf/mf_intGauss_p.FOR
+	gfortran -c -o ./obj/mf_intGauss_p.o ../mf/mf_intGauss_p.FOR
 ./obj/mf_int_G.o : ../mf/mf_int_G.FOR	
-	gfortran -std=legacy -c -o ./obj/mf_int_G.o ../mf/mf_int_G.FOR
+	gfortran -c -o ./obj/mf_int_G.o ../mf/mf_int_G.FOR
 ./obj/mf_intSimps.o : ../mf/mf_intSimps.f90	
 	gfortran -c -o ./obj/mf_intSimps.o ../mf/mf_intSimps.f90
 ./obj/mf_intSimp_p.o : ../mf/mf_intSimp_p.FOR	
-	gfortran -std=legacy -c -o ./obj/mf_intSimp_p.o ../mf/mf_intSimp_p.FOR
+	gfortran -c -o ./obj/mf_intSimp_p.o ../mf/mf_intSimp_p.FOR
 ./obj/mf_ksi.o : ../mf/mf_ksi.f90	
 	gfortran -c -o ./obj/mf_ksi.o ../mf/mf_ksi.f90
 ./obj/mf_laguer_exp.o : ../mf/mf_laguer_exp.f90	
@@ -161,9 +190,14 @@ c : $(objects) $(objects_math) $(objects_phys)
 	gfortran -c -o ./obj/mf_laguer_n.o ../mf/mf_laguer_n.f90
 ./obj/mf_matrix_matrix.o : ../mf/mf_matrix_matrix.f90	
 	gfortran -c -o ./obj/mf_matrix_matrix.o ../mf/mf_matrix_matrix.f90
-./obj/mf_numbers.o : ../mf/mf_numbers.f90
+./obj/mf_num_mart.o : ../mf/mf_num_mart.f90	
+	gfortran -c -o ./obj/mf_num_mart.o ../mf/mf_num_mart.f90
+./obj/mf_numbers.o : ../mf/mf_numbers.f90	
 	gfortran -c -o ./obj/mf_numbers.o ../mf/mf_numbers.f90
 ./obj/mf_vector_sk_mult.o : ../mf/mf_vector_sk_mult.f90	
 	gfortran -c -o ./obj/mf_vector_sk_mult.o ../mf/mf_vector_sk_mult.f90
+./obj/mf_coord_sys.o : ../mf/mf_coord_sys.f90	
+	gfortran -c -o ./obj/mf_coord_sys.o ../mf/mf_coord_sys.f90
+
 
 

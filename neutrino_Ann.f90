@@ -67,7 +67,7 @@ character(len=100):: file_name
   200 format (8(es11.4,"   "),1(I6,"   "))
   201 format (7(es11.4,"   "),3(I6,"   "))
   202 format (1(A12),(es8.2))
-  b=2.d0
+  b=0.4d0
   write(file_name,202)"./res/res_b_",b
   write(*,*)"# file_name=",file_name; write(*,*)
   open (unit = 20, file = file_name)
