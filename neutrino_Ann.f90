@@ -67,22 +67,25 @@ character(len=100):: file_name
   200 format (8(es11.4,"   "),1(I6,"   "))
   201 format (7(es11.4,"   "),3(I6,"   "))
   202 format (1(A12),(es8.2))
-  b=0.4d0
+  b=0.2d0
   write(file_name,202)"./res/res_b_",b
   write(*,*)"# file_name=",file_name; write(*,*)
-  open (unit = 20, file = file_name)
-  write(20,*)"# b=",b
-  write(20,*)"# Format: b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,res/Q23_app,n_sum_max"
-  write(20,*)
-  close(20)
+  !!open (unit = 20, file = file_name)
+  !!write(20,*)"# b=",b
+  !!write(20,*)"# Format: b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,res/Q23_app,n_sum_max"
+  !!write(20,*)
+  !!close(20)
 
-  lg_TkeV=1.d0
+  lg_TkeV=1.78d0
   do while(lg_TkeV.le.2.d0)
     T_keV=10.d0**lg_TkeV
     T10=T_keV*1.1602d-3 !*1.1602d-3
     B12=b*44.12d0
-    lg_n_e_ini30=-5.d0
-    !write(*,*)lg_TkeV,lg_n_e_ini30
+    if(lg_TkeV.eq.1.78d0)then
+      lg_n_e_ini30=2.d0
+    else
+      lg_n_e_ini30=-5.d0
+    end if
     do while(lg_n_e_ini30.le.2.d0)
       n_e_ini30=10.d0**lg_n_e_ini30
       !call EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu_keV,n_max)
@@ -331,7 +334,6 @@ contains
       fun(1:n_sum+1)=fun_new(1:n_sum+1)
       N1=N1+M1
       call sum_over_incomplete_array2(n_sum+1,N1,num,fun,sum_array2_new)
-      !write(*,*)"#4 ",N1,M1,sum_array,sum_array2_new
     end do
     res=sum_array 
     if(n_sum.le.n_max_e)then; res=res+NeutrinoSyn_intZe(b,T,n_sum,0,Z1,Z2,mu); end if 
@@ -342,13 +344,14 @@ contains
 
 
   !==the function integrates over the Z-momentum of the electron/positron==!
+  !==todo: it would be better to use res_min as a parameter of a function==!
   recursive real*8 function NeutrinoSyn_intZe(b,T,n_e,n_p,Z1,Z2,mu) result(res)
   implicit none
   real*8,intent(in)::b,T,Z1,Z2,mu
   integer,intent(in)::n_e,n_p
   integer::nn,nn_max
-  real*8::res1,res2
-    !write(*,*)"qqq"
+  real*8::res1,res2,res_min
+    res_min=1.d-90
     eps=1.d-2
     nn_max=800
     nn=100; det=13
@@ -362,20 +365,16 @@ contains
       if(nn.gt.n_max)then
         det=11
       end if
-      !write(*,*)"##",res1
       res1=res2
     end do
 
-    !write(*,*)"#fin#",res1
-
     !==If we reach the maximum amount of the intervals,
     !==we devide the region into 2 parts and repeate the procedure.
-    if(nn.lt.nn_max)then
+    if((nn.lt.nn_max).or.(res1.lt.res_min))then
       res=res1
     else
       res=NeutrinoSyn_intZe(b,T,n_e,n_p,Z1,(Z1+Z2)/2,mu)+NeutrinoSyn_intZe(b,T,n_e,n_p,(Z1+Z2)/2,Z2,mu)
     end if
-    !write(*,*)"#NeutrinoSyn_intZe: ",T,n_e+n_p,n_e,n_p,Z1,Z2,mu,res
   return
   end function NeutrinoSyn_intZe
 
@@ -502,7 +501,6 @@ contains
       i=i+1
     end do
     NeutrinoSyn_intZp_n=res
-    !write(*,*)"#NeutrinoSyn_intZp_n ",res,Zp1,Zp2!,Z_i,b,n_e,n_p,mu,T
   return
   end function NeutrinoSyn_intZp_n
 
@@ -526,20 +524,10 @@ contains
       q_p=q_p1+(i-1)*dq_p
       coeff=SimpsonCoeff(i,nn)
       f_i=IntNeutrinoAnn(n_e,n_p,Ze,Zp,q_z,q_p,b,mu,T)
-!if(nn.gt.4.e2)then
-!  write(*,*)i,q_p,f_i
-!end if
       res=res+coeff*f_i*dq_p/3
       i=i+1
     end do
-!if(nn.gt.4.e2)then
-!  write(*,*)"#Parameters1: ",q_p1,q_p2
-!  write(*,*)"#Parameters2: ",q_z,Ze,Zp,omega,b,n_e,n_p,mu,T,nn
-!  write(*,*)"#Parameters3: ",b,n_e,n_p,mu,T,nn
-!  read(*,*)
-!end if
     NeutrinoSyn_intQp_n=res
-    !write(*,*)res,nn
   return
   end function NeutrinoSyn_intQp_n
 
@@ -727,7 +715,6 @@ real*8::eps,sum_1,sum_2,sum_tot,fun_new
       k=k+2
     else
       !==we have to add points==!
-      !write(*,*)"a1.2"
       M1=M1+add_1+add_2
       num_new(k)=num(i)  ; fun_new(k)=fun(i)
       if(add_1.eq.1)then; 
@@ -753,12 +740,10 @@ real*8::eps,sum_1,sum_2,sum_tot,fun_new
     call mf_sum_fn_approx_(num(i+1)-num(i-1)+1,fun(i-1),fun(i+1),sum_tot,help1,help2) 
     if(( (sum_1+sum_2-sum_tot)/(sum_1+sum_2) ).lt.eps)then
       !we will not add points
-      !write(*,*)"a2.1"
       M1=M1+0
       num_new(k+1)=num(i+1); fun_new(k+1)=fun(i+1)
     else
       ! we have to add points
-      !write(*,*)"a2.2"
       M1=M1+add_2
       if(add_2.eq.1)then
         j=j+1; added_num(j)=k+add_2
@@ -830,7 +815,6 @@ integer::new_N,number_add  !==for help==!
   do while(i.le.(N1-1))
     call mf_sum_fn_approx_(num(i+1)-num(i)+1,fun(i),fun(i+1),sum_add,new_N,number_add)
     sum_add=sum_add-fun(i+1)
-    !write(*,*)i,sum_add
     sum_array=sum_array+sum_add
     i=i+1
   end do

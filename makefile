@@ -57,14 +57,15 @@ objects_phys =	./obj/PhFun_eMaxvell.o \
 		./obj/PhFun_MagneticDipole.o \
 		./obj/PhFun_GR_app.o \
 		./obj/PhFun_Polarization.o \
-		./obj/PhFun_dielec_tensor.o
+		./obj/PhFun_dielec_tensor.o \
+		./obj/PhFun_blackbody.o
 
 objects_astro =	./obj/af_ref_frame.o
 
 
 
-c : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
-	gfortran -fopenmp -o c $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
+c_nu02 : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
+	gfortran -fopenmp -o c_nu02 $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
 
 
 ./obj/c.o : c.f90	
@@ -127,6 +128,8 @@ c : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
 	gfortran -c -o ./obj/PhFun_Polarization.o ../PhFun/PhFun_Polarization.f90
 ./obj/PhFun_dielec_tensor.o : ../PhFun/PhFun_dielec_tensor.f90
 	gfortran -c -o ./obj/PhFun_dielec_tensor.o ../PhFun/PhFun_dielec_tensor.f90
+./obj/PhFun_blackbody.o : ../PhFun/PhFun_blackbody.f90
+	gfortran -c -o ./obj/PhFun_blackbody.o ../PhFun/PhFun_blackbody.f90
 
 
 
