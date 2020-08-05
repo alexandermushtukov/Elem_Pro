@@ -100,7 +100,6 @@ integer::det,n_max,n_max_e,n_max_p,n_sum_max
 
       !call NeutrinoEmAnnih(TkeV*1.1606d-3,b*44.13d0,res_app)
 
-
       !write(*,*)b,n_e30,TkeV,res_app/1.d3
       log_TkeV=log_TkeV+0.05d0
       !TkeV=TkeV*2.d0

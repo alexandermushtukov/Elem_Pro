@@ -67,7 +67,7 @@ character(len=100):: file_name
   200 format (8(es11.4,"   "),1(I6,"   "))
   201 format (7(es11.4,"   "),3(I6,"   "))
   202 format (1(A12),(es8.2))
-  b=0.2d0
+  b=0.3d0
   write(file_name,202)"./res/res_b_",b
   write(*,*)"# file_name=",file_name; write(*,*)
   !!open (unit = 20, file = file_name)
@@ -76,12 +76,12 @@ character(len=100):: file_name
   !!write(20,*)
   !!close(20)
 
-  lg_TkeV=1.78d0
-  do while(lg_TkeV.le.2.d0)
+  lg_TkeV=1.94d0
+  do while(lg_TkeV.lt.2.d0)
     T_keV=10.d0**lg_TkeV
     T10=T_keV*1.1602d-3 !*1.1602d-3
     B12=b*44.12d0
-    if(lg_TkeV.eq.1.78d0)then
+    if(lg_TkeV.eq.1.94d0)then
       lg_n_e_ini30=2.d0
     else
       lg_n_e_ini30=-5.d0
@@ -175,7 +175,6 @@ real*8::sum_array  !==function==!
   res=res*b/3/(2*pi)**5   !==10^(23)==!
 return
 contains
-
 
   subroutine sum_over_diagonal(n_sum,b,T,Z1,Z2,mu,res)
   implicit none
@@ -343,8 +342,55 @@ contains
 
 
 
-  !==the function integrates over the Z-momentum of the electron/positron==!
-  !==todo: it would be better to use res_min as a parameter of a function==!
+  !===================================================================================
+  !===================================================================================
+  real*8 function NeutrinoSyn_intZe_new(b,T,n_e,n_p,Z1,Z2,mu)
+  implicit none
+  real*8,intent(in)::b,T,Z1,Z2,mu
+  integer,intent(in)::n_e,n_p
+  real*8::mas,res,eps,Zp1,Zp2
+  dimension mas(7)
+  integer::n_max_int
+    eps=2.d-2; n_max_int=32
+    Zp1= -sqrt(T**2+2*T)
+    Zp2=  sqrt(T**2+2*T)
+    mas(1)=Zp1
+    mas(2)=Zp2
+    mas(3)=b
+    mas(4)=n_e*1.d0
+    mas(5)=n_p*1.d0
+    mas(6)=mu
+    mas(7)=T
+    call mf_int_Simpson_adaptive(NeutrinoSyn_intZp_new,Z1,Z2,eps,mas,7,n_max_int,res)
+    NeutrinoSyn_intZe_new=res
+  return
+  end function NeutrinoSyn_intZe_new
+
+
+  real*8 function NeutrinoSyn_intZp_new(Z,mas,n)
+  implicit none
+  real*8,intent(in)::Z,mas
+  integer,intent(in)::n
+  dimension mas(n)
+  real*8::Zp1,Zp2,b,mu,T
+  integer::n_e,n_p
+    Zp1=mas(1)
+    Zp2=mas(2)
+    b=mas(3)
+    n_e=int(mas(4))
+    n_p=int(mas(5))
+    mu=mas(6)
+    T=mas(7)
+    NeutrinoSyn_intZp_new=NeutrinoSyn_intZp(Z,Zp1,Zp2,b,n_e,n_p,mu,T)
+  return
+  end function NeutrinoSyn_intZp_new
+  !====================================================================================
+
+
+  !=================================================================================
+  ! The function integrates over the Z-momentum of the electron/positron.
+  ! Todo: it would be better to use res_min as a parameter of a function
+  !=================================================================================
   recursive real*8 function NeutrinoSyn_intZe(b,T,n_e,n_p,Z1,Z2,mu) result(res)
   implicit none
   real*8,intent(in)::b,T,Z1,Z2,mu
@@ -353,8 +399,8 @@ contains
   real*8::res1,res2,res_min
     res_min=1.d-90
     eps=1.d-2
-    nn_max=800
-    nn=100; det=13
+    nn_max=900
+    nn=25; det=13
     res1=NeutrinoSyn_intZe_n(b,T,n_e,n_p,Z1,Z2,mu,nn)
     do while(det.gt.11)
       nn=nn*2+1
@@ -399,12 +445,12 @@ contains
       Z=Z1+dZ*(i-1)
       Zp1= -sqrt(T**2+2*T)
       Zp2=  sqrt(T**2+2*T)
-      f_i=NeutrinoSyn_intZp(Zp1,Zp2,Z,b,n_e,n_p,mu,T)
+      f_i=NeutrinoSyn_intZp(Z,Zp1,Zp2,b,n_e,n_p,mu,T)
       det=11
       do while(det.eq.11)
         Zp1=2*Zp1
         Zp2=2*Zp2
-        f_i_=NeutrinoSyn_intZp(Zp1,Zp2,Z,b,n_e,n_p,mu,T)
+        f_i_=NeutrinoSyn_intZp(Z,Zp1,Zp2,b,n_e,n_p,mu,T)
         if(((abs(f_i_)+abs(f_i)).eq.0.d0).or.((abs(f_i-f_i_)/max(abs(f_i),abs(f_i_))).le.1.d-2))then
           det=12
         else
@@ -416,12 +462,14 @@ contains
       i=i+1
     end do
     NeutrinoSyn_intZe_n=res
-    !write(*,*)"#NeutrinoSyn_intZe_n: ",nn,res
   return
   end function NeutrinoSyn_intZe_n
 
 
-  recursive real*8 function NeutrinoSyn_intZp(Zp1,Zp2,Z_i,b,n_e,n_p,mu,T) result(res)
+  !=======================================================================================
+  ! The function integrates over the omentum of positrons in the interval (Zp1,Zp2)
+  !=======================================================================================
+  recursive real*8 function NeutrinoSyn_intZp(Z_i,Zp1,Zp2,b,n_e,n_p,mu,T) result(res)
   implicit none
   real*8,intent(in)::Zp1,Zp2,Z_i,b,mu,T
   integer,intent(in)::n_e,n_p
@@ -430,10 +478,10 @@ contains
     eps=1.d-2
     nn_max=200
     nn=20; det=13
-    res1=NeutrinoSyn_intZp_n(Zp1,Zp2,Z_i,b,n_e,n_p,mu,T,nn) !int_simpson_n(f,a,b,n)
+    res1=NeutrinoSyn_intZp_n(Z_i,Zp1,Zp2,b,n_e,n_p,mu,T,nn) !int_simpson_n(f,a,b,n)
     do while(det.gt.11)
       nn=nn*2+1
-      res2=NeutrinoSyn_intZp_n(Zp1,Zp2,Z_i,b,n_e,n_p,mu,T,nn)
+      res2=NeutrinoSyn_intZp_n(Z_i,Zp1,Zp2,b,n_e,n_p,mu,T,nn)
       if( (abs((res2-res1)/res2).lt.eps).or.((res2-res1).eq.0.d0) )then
         det=det-1
       end if
@@ -446,7 +494,8 @@ contains
     if(nn.lt.nn_max)then
       res=res1
     else
-      res=NeutrinoSyn_intZp(Zp1,(Zp1+Zp2)/2,Z_i,b,n_e,n_p,mu,T)+NeutrinoSyn_intZp((Zp1+Zp2)/2,Zp2,Z_i,b,n_e,n_p,mu,T)
+      res=NeutrinoSyn_intZp(Z_i,Zp1,(Zp1+Zp2)/2,b,n_e,n_p,mu,T)&
+         +NeutrinoSyn_intZp(Z_i,(Zp1+Zp2)/2,Zp2,b,n_e,n_p,mu,T)
     end if
   return
   end function NeutrinoSyn_intZp
@@ -457,7 +506,7 @@ contains
   ! The function calculates approximately the integral over q_{z} using given number of intervals
   ! and Simpson method.
   !=================================================================================================
-  real*8 function NeutrinoSyn_intZp_n(Zp1,Zp2,Z_i,b,n_e,n_p,mu,T,nn)
+  real*8 function NeutrinoSyn_intZp_n(Z_i,Zp1,Zp2,b,n_e,n_p,mu,T,nn)
   implicit none
   real*8,intent(in)::Zp1,Zp2,Z_i,b,mu,T
   integer,intent(in)::n_e,n_p,nn

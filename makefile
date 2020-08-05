@@ -64,8 +64,8 @@ objects_astro =	./obj/af_ref_frame.o
 
 
 
-c_nu02 : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
-	gfortran -fopenmp -o c_nu02 $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
+c_nu03 : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
+	gfortran -fopenmp -o c_nu03 $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
 
 
 ./obj/c.o : c.f90	
