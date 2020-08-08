@@ -67,25 +67,25 @@ character(len=100):: file_name
   200 format (8(es11.4,"   "),1(I6,"   "))
   201 format (7(es11.4,"   "),3(I6,"   "))
   202 format (1(A12),(es8.2))
-  b=0.3d0
+  b=3.d0
   write(file_name,202)"./res/res_b_",b
   write(*,*)"# file_name=",file_name; write(*,*)
-  !!open (unit = 20, file = file_name)
-  !!write(20,*)"# b=",b
-  !!write(20,*)"# Format: b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,res/Q23_app,n_sum_max"
-  !!write(20,*)
-  !!close(20)
+  open (unit = 20, file = file_name)
+  write(20,*)"# b=",b
+  write(20,*)"# Format: b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,res/Q23_app,n_sum_max"
+  write(20,*)
+  close(20)
 
-  lg_TkeV=1.94d0
+  lg_TkeV=1.d0
   do while(lg_TkeV.lt.2.d0)
     T_keV=10.d0**lg_TkeV
     T10=T_keV*1.1602d-3 !*1.1602d-3
     B12=b*44.12d0
-    if(lg_TkeV.eq.1.94d0)then
-      lg_n_e_ini30=2.d0
-    else
+    !if(lg_TkeV.eq.1.94d0)then
+    !  lg_n_e_ini30=2.d0
+    !else
       lg_n_e_ini30=-5.d0
-    end if
+    !end if
     do while(lg_n_e_ini30.le.2.d0)
       n_e_ini30=10.d0**lg_n_e_ini30
       !call EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu_keV,n_max)
@@ -102,7 +102,6 @@ character(len=100):: file_name
     lg_TkeV=lg_TkeV+2.d-2
     write(*,*)
   end do
-
 
 return
 end subroutine Test_NeutrinoEmAnnih
@@ -142,27 +141,22 @@ real*8::sum_array  !==function==!
   res=0.d0
 
   !==limits of electron/pozitron momentum, where we integrate==!
-  Z1= -sqrt(T**2+2*T)*4 !-2.d0
-  Z2=  sqrt(T**2+2*T)*4 !+2.d0
+  Z1= -sqrt(T**2+2*T)!*4 !-2.d0
+  Z2=  sqrt(T**2+2*T)!*4 !+2.d0
 
   mas(1:1000)=0.d0; det_n=11
   n_sum=0
   do while(det_n.eq.11)
-  !do while(n_sum.le.n_max)
     if(n_sum.le.8)then
       call sum_over_diagonal_par(n_sum,n_max_e,n_max_p,b,T,Z1,Z2,mu,res_add)
-      !write(*,*)res_add
     else
       !call sum_over_diagonal(n_sum,b,T,Z1,Z2,mu,res_add)
       call sum_over_diagonal_approx_par(n_sum,n_max_e,n_max_p,b,T,Z1,Z2,mu,res_add)
     end if
     res=res+res_add
     mas(n_sum+1)=res_add
-    !write(*,*)"# ",n_sum,res,res_add
-    !write(*,*)n_sum,res,res_add
 
     if(((n_sum.gt.2).and.(ifEven(n_sum+1).eq.0)).or.(res_add.lt.(1.d-5*res)))then
-      !write(*,*)"qq",n_sum,(n_sum+1)/2+1,n_sum+1
       if((sum_array(mas,1000,1,n_sum+1).eq.0.d0).or.&
          ((sum_array(mas,1000,(n_sum+1)/2+1,n_sum+1)/sum_array(mas,1000,1,n_sum+1)).lt.1.d-2))then
         det_n=13
@@ -207,7 +201,6 @@ contains
   real*8::res
     res=0.d0
     n_e=0
-
     f=0.d0
     call omp_set_num_threads(n_sum+1)
     !$omp parallel private(n_e_task,n_p_task) firstprivate(n_sum) reduction(+: f)
@@ -291,7 +284,6 @@ contains
   integer::i,N1,step_num
   real*8::res,sum_array,sum_array2,sum_array2_new,eps,fun_task
     !write(*,*)"#0 :",n_sum,n_max_e,n_max_p
-
     eps=1.d-2
     N1=3
     num(1)=1; n_e=num(1); n_p=n_sum-n_e 
@@ -335,23 +327,24 @@ contains
       call sum_over_incomplete_array2(n_sum+1,N1,num,fun,sum_array2_new)
     end do
     res=sum_array 
-    if(n_sum.le.n_max_e)then; res=res+NeutrinoSyn_intZe(b,T,n_sum,0,Z1,Z2,mu); end if 
-    if(n_sum.le.n_max_p)then; res=res+NeutrinoSyn_intZe(b,T,0,n_sum,Z1,Z2,mu); end if 
+    if(n_sum.le.n_max_e)then; res=res+NeutrinoSyn_intZe(b,T,n_sum,0,Z1,Z2,mu); end if
+    if(n_sum.le.n_max_p)then; res=res+NeutrinoSyn_intZe(b,T,0,n_sum,Z1,Z2,mu); end if
   return
   end subroutine sum_over_diagonal_approx_par
 
 
-
   !===================================================================================
+  ! Updated adaptive integration over the electron momentum. The integration is improper
+  ! and Z1,Z2 - the initial interval which we take to try the integration.
   !===================================================================================
-  real*8 function NeutrinoSyn_intZe_new(b,T,n_e,n_p,Z1,Z2,mu)
+  real*8 function NeutrinoSyn_intZe(b,T,n_e,n_p,Z1,Z2,mu)
   implicit none
   real*8,intent(in)::b,T,Z1,Z2,mu
   integer,intent(in)::n_e,n_p
   real*8::mas,res,eps,Zp1,Zp2
   dimension mas(7)
   integer::n_max_int
-    eps=2.d-2; n_max_int=32
+    eps=1.d-2; n_max_int=32
     Zp1= -sqrt(T**2+2*T)
     Zp2=  sqrt(T**2+2*T)
     mas(1)=Zp1
@@ -361,19 +354,20 @@ contains
     mas(5)=n_p*1.d0
     mas(6)=mu
     mas(7)=T
-    call mf_int_Simpson_adaptive(NeutrinoSyn_intZp_new,Z1,Z2,eps,mas,7,n_max_int,res)
-    NeutrinoSyn_intZe_new=res
+    call mf_int_Simp_adap_improp_1(NeutrinoSyn_intZp,Z1,Z2,eps,mas,7,n_max_int,res)
+    NeutrinoSyn_intZe=res
   return
-  end function NeutrinoSyn_intZe_new
+  end function NeutrinoSyn_intZe
 
 
-  real*8 function NeutrinoSyn_intZp_new(Z,mas,n)
+  real*8 function NeutrinoSyn_intZp(Z,mas,n)
   implicit none
   real*8,intent(in)::Z,mas
   integer,intent(in)::n
-  dimension mas(n)
-  real*8::Zp1,Zp2,b,mu,T
-  integer::n_e,n_p
+  dimension mas(n),mas_(6)
+  real*8::Zp1,Zp2,b,mu,T,res,eps,mas_
+  integer::n_e,n_p,n_max_int
+    eps=1.d-2; n_max_int=32
     Zp1=mas(1)
     Zp2=mas(2)
     b=mas(3)
@@ -381,204 +375,60 @@ contains
     n_p=int(mas(5))
     mu=mas(6)
     T=mas(7)
-    NeutrinoSyn_intZp_new=NeutrinoSyn_intZp(Z,Zp1,Zp2,b,n_e,n_p,mu,T)
-  return
-  end function NeutrinoSyn_intZp_new
-  !====================================================================================
-
-
-  !=================================================================================
-  ! The function integrates over the Z-momentum of the electron/positron.
-  ! Todo: it would be better to use res_min as a parameter of a function
-  !=================================================================================
-  recursive real*8 function NeutrinoSyn_intZe(b,T,n_e,n_p,Z1,Z2,mu) result(res)
-  implicit none
-  real*8,intent(in)::b,T,Z1,Z2,mu
-  integer,intent(in)::n_e,n_p
-  integer::nn,nn_max
-  real*8::res1,res2,res_min
-    res_min=1.d-90
-    eps=1.d-2
-    nn_max=900
-    nn=25; det=13
-    res1=NeutrinoSyn_intZe_n(b,T,n_e,n_p,Z1,Z2,mu,nn)
-    do while(det.gt.11)
-      nn=nn*2+1
-      res2=NeutrinoSyn_intZe_n(b,T,n_e,n_p,Z1,Z2,mu,nn)
-      if(abs((res2-res1)/res2).lt.eps)then
-        det=det-1
-      end if
-      if(nn.gt.n_max)then
-        det=11
-      end if
-      res1=res2
-    end do
-
-    !==If we reach the maximum amount of the intervals,
-    !==we devide the region into 2 parts and repeate the procedure.
-    if((nn.lt.nn_max).or.(res1.lt.res_min))then
-      res=res1
-    else
-      res=NeutrinoSyn_intZe(b,T,n_e,n_p,Z1,(Z1+Z2)/2,mu)+NeutrinoSyn_intZe(b,T,n_e,n_p,(Z1+Z2)/2,Z2,mu)
-    end if
-  return
-  end function NeutrinoSyn_intZe
-
-
-
-  !====================================================================================
-  ! Here we integrate over the Z-momentum of electrons using given amount of intervals.
-  ! Simpson method is in use.
-  !====================================================================================
-  real*8 function NeutrinoSyn_intZe_n(b,T,n_e,n_p,Z1,Z2,mu,nn)
-  implicit none
-  real*8,intent(in)::b,T,Z1,Z2,mu
-  integer,intent(in)::n_e,n_p,nn
-  real*8::res,coeff,dZ,Z,f_i,f_i_,Zp1,Zp2
-  integer::i,det
-  real*8::SimpsonCoeff  !==function==!
-    res=0.d0
-    dZ=(Z2-Z1)/(nn-1)
-    res=0.d0
-    i=1
-    do while(i.le.nn)
-      Z=Z1+dZ*(i-1)
-      Zp1= -sqrt(T**2+2*T)
-      Zp2=  sqrt(T**2+2*T)
-      f_i=NeutrinoSyn_intZp(Z,Zp1,Zp2,b,n_e,n_p,mu,T)
-      det=11
-      do while(det.eq.11)
-        Zp1=2*Zp1
-        Zp2=2*Zp2
-        f_i_=NeutrinoSyn_intZp(Z,Zp1,Zp2,b,n_e,n_p,mu,T)
-        if(((abs(f_i_)+abs(f_i)).eq.0.d0).or.((abs(f_i-f_i_)/max(abs(f_i),abs(f_i_))).le.1.d-2))then
-          det=12
-        else
-          f_i=f_i_
-        end if
-      end do
-      coeff=SimpsonCoeff(i,nn)
-      res=res+coeff*f_i*dZ/3
-      i=i+1
-    end do
-    NeutrinoSyn_intZe_n=res
-  return
-  end function NeutrinoSyn_intZe_n
-
-
-  !=======================================================================================
-  ! The function integrates over the omentum of positrons in the interval (Zp1,Zp2)
-  !=======================================================================================
-  recursive real*8 function NeutrinoSyn_intZp(Z_i,Zp1,Zp2,b,n_e,n_p,mu,T) result(res)
-  implicit none
-  real*8,intent(in)::Zp1,Zp2,Z_i,b,mu,T
-  integer,intent(in)::n_e,n_p
-  integer::nn,nn_max
-  real*8::res1,res2
-    eps=1.d-2
-    nn_max=200
-    nn=20; det=13
-    res1=NeutrinoSyn_intZp_n(Z_i,Zp1,Zp2,b,n_e,n_p,mu,T,nn) !int_simpson_n(f,a,b,n)
-    do while(det.gt.11)
-      nn=nn*2+1
-      res2=NeutrinoSyn_intZp_n(Z_i,Zp1,Zp2,b,n_e,n_p,mu,T,nn)
-      if( (abs((res2-res1)/res2).lt.eps).or.((res2-res1).eq.0.d0) )then
-        det=det-1
-      end if
-      if(nn.gt.nn_max)then
-        det=11
-      end if
-      res1=res2
-    end do
-
-    if(nn.lt.nn_max)then
-      res=res1
-    else
-      res=NeutrinoSyn_intZp(Z_i,Zp1,(Zp1+Zp2)/2,b,n_e,n_p,mu,T)&
-         +NeutrinoSyn_intZp(Z_i,(Zp1+Zp2)/2,Zp2,b,n_e,n_p,mu,T)
-    end if
+    mas_(1)=Z; mas_(2)=b; mas_(3)=n_e*1.d0; mas_(4)=n_p*1.d0; mas_(5)=mu; mas_(6)=T
+    call mf_int_Simpson_adaptive(fun_int_Zp,Zp1,Zp2,eps,mas_,6,n_max_int,res)
+    NeutrinoSyn_intZp=res
   return
   end function NeutrinoSyn_intZp
+  !====================================================================================
 
 
 
   !=================================================================================================
-  ! The function calculates approximately the integral over q_{z} using given number of intervals
-  ! and Simpson method.
+  ! This function is integrated over positron momentum.
   !=================================================================================================
-  real*8 function NeutrinoSyn_intZp_n(Z_i,Zp1,Zp2,b,n_e,n_p,mu,T,nn)
+  real*8 function fun_int_Zp(Zp,mas,n)
   implicit none
-  real*8,intent(in)::Zp1,Zp2,Z_i,b,mu,T
-  integer,intent(in)::n_e,n_p,nn
-  real*8::dZp,Zp,coeff,res,f_i,q_p_min,q_p_max,f1,f2,eps,omega,Z_f,q_z
-  integer::i,nn_,nn_max,det
-  real*8::SimpsonCoeff  !==functions==!
+  real*8,intent(in)::Zp,mas
+  integer,intent(in)::n
+  dimension mas(n),mas_(8)
+  real*8::eps,mas_,Z_i,b,mu,T,q_z,omega,q_p_min,q_p_max,res
+  integer::n_e,n_p
     eps=1.d-2
-    nn_max=2000
-    dZp=(Zp2-Zp1)/(nn-1)
-    res=0.d0
-    i=1
-    do while(i.le.nn)
-      Zp=Zp1+(i-1)*dZp
-      q_z=Z_i+Zp
-      omega=sqrt(1.d0+2*n_e*b+Z_i**2)+sqrt(1.d0+2*b*n_p+Zp**2)
-      coeff=SimpsonCoeff(i,nn)
+    !==reading input array==!
+    Z_i=mas(1)
+    b=mas(2)
+    n_e=int(mas(3))
+    n_p=int(mas(4))
+    mu=mas(5)
+    T=mas(6)
+    !==mas_(1)=Z_i; mas_(2)=b; mas_(3)=n_e*1.d0; mas_(4)=n_p*1.d0; mas_(5)=mu; mas_(6)=T
+    !==end reading the array==!
+    q_z=Z_i+Zp
+    omega=sqrt(1.d0+2*n_e*b+Z_i**2)+sqrt(1.d0+2*b*n_p+Zp**2)
+    q_p_min=0.d0
+    q_p_max=sqrt(omega**2-q_z**2)
+    mas_(1)=n_e*1.d0; mas_(2)=n_p*1.d0; mas_(3)=Z_i; mas_(4)=Zp; mas_(5)=q_z; mas_(6)=b; mas_(7)=mu; mas_(8)=T
 
-      !==integration over q_p==!
-      q_p_min=0.d0
-      q_p_max=sqrt(omega**2-q_z**2)
-      nn_=20
-      f2=NeutrinoSyn_intQp_n(q_p_min,q_p_max,q_z,Z_i,Zp,omega,b,n_e,n_p,mu,T,nn_)
-      det=13
-      do while(det.eq.13)
-        f1=f2
-        nn_=nn_*2
-        f2=NeutrinoSyn_intQp_n(q_p_min,q_p_max,q_z,Z_i,Zp,omega,b,n_e,n_p,mu,T,nn_)
-        if((abs(f2)).gt.1.d-90)then
-          if(((abs((f2-f1)/f2)).lt.eps).or.(nn_.gt.nn_max))then
-            det=1
-            f_i=f2
-          end if
-        else
-          det=1
-          f_i=0.d0
-        end if
-      end do
-      !==end of the integration over q_p==!
-
-      res=res+coeff*f_i*dZp/3
-      i=i+1
-    end do
-    NeutrinoSyn_intZp_n=res
+    call mf_int_Simpson_adaptive(fun_int_q_p,q_p_min,q_p_max,eps,mas_,8,111,res)
+    fun_int_Zp=res
   return
-  end function NeutrinoSyn_intZp_n
+  end function fun_int_Zp
 
 
-  !=================================================================================================
-  ! The function calculates approximately the integral over q_{\perp} using given number of intervals
-  ! and Simpson method.
-  !=================================================================================================
-  real*8 function NeutrinoSyn_intQp_n(q_p1,q_p2,q_z,Ze,Zp,omega,b,n_e,n_p,mu,T,nn)
+  !=======================================================================================
+  ! This function is adopted for integration over q_p.
+  !=======================================================================================
+  real*8 function fun_int_q_p(q_p,mas,n)
   implicit none
-  real*8,intent(in)::q_p1,q_p2,q_z,Ze,Zp,omega,b,mu,T
-  integer,intent(in)::n_e,n_p,nn
-  real*8::dq_p,q_p,f_i,res,coeff
-  integer::i
-  real*8::SimpsonCoeff  !==function==!
+  real*8,intent(in)::q_p,mas
+  integer,intent(in)::n
+  dimension mas(n)
   real*8::IntNeutrinoAnn  !==function==!
-    dq_p=(q_p2-q_p1)/(nn-1)
-    res=0.d0
-    i=1
-    do while(i.le.nn)
-      q_p=q_p1+(i-1)*dq_p
-      coeff=SimpsonCoeff(i,nn)
-      f_i=IntNeutrinoAnn(n_e,n_p,Ze,Zp,q_z,q_p,b,mu,T)
-      res=res+coeff*f_i*dq_p/3
-      i=i+1
-    end do
-    NeutrinoSyn_intQp_n=res
+    !mas(1)=n_e*1.d0; mas(2)=n_p*1.d0; mas(3)=Z_e; mas(4)=Z_p; mas(5)=q_z; mas(6)=b; mas(7)=mu; mas(8)=T
+    fun_int_q_p=IntNeutrinoAnn(int(mas(1)),int(mas(2)),mas(3),mas(4),mas(5),q_p,mas(6),mas(7),mas(8))
   return
-  end function NeutrinoSyn_intQp_n
+  end function fun_int_q_p
 
 end subroutine NeutrinoAnn
 
@@ -619,9 +469,9 @@ return
 end subroutine test_IntAnn
 
 
-!=====================================================================================================================
-! The function which is used in integration to get the intencity if neutrino emission due to the annihilation process.
-!=====================================================================================================================
+!=============================================================================================================
+! The function which is used in integration to get the intencity if neutrino emission due to the annihilation.
+!=============================================================================================================
 real*8 function IntNeutrinoAnn(n_e,n_p,Z_e,Z_p,q_z,q_p,b,mu,T)
 implicit none
 integer,intent(in)::n_e,n_p
@@ -638,7 +488,6 @@ real*8::res
     res=0.d0
   end if
   IntNeutrinoAnn=res
-  !write(*,*)res
 return
 contains
   !==Electron distribution function for a given chemical potential mu, see eq (7) in Kaminker 1992==!
@@ -690,7 +539,6 @@ contains
     A3=A3*(E_i*Z_f-E_f*Z_i)*C_V_e*C_A_e/E_i/E_f +2*A3*(E_i*Z_f-E_f*Z_i)*C_V_o*C_A_o/E_i/E_f
 
     A=A1+A2-A3
-    !write(*,*)A
   return
   end function A
 
