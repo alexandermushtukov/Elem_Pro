@@ -1,3 +1,56 @@
+!===============================================================================================
+! Subroutine testing Annihilation.
+!===============================================================================================
+subroutine Test_NeutrinoEmAnnih()
+implicit none
+real*8::T_kev,b,T10,lg_TkeV,B12,Q23_app,n_e_ini30,lg_n_e_ini30,Q23,mu_keV
+integer::n_sum_max,n_max_e,n_max_p
+character(len=100):: file_name
+
+  200 format (8(es11.4,"   "),1(I6,"   "))
+  201 format (7(es11.4,"   "),3(I6,"   "))
+  202 format (1(A12),(es8.2))
+  b=2.d0
+  write(file_name,202)"./res/res_c_",b
+  write(*,*)"# file_name=",file_name; write(*,*)
+  !!open (unit = 20, file = file_name)
+  !!write(20,*)"# b=",b
+  !!write(20,*)"# Format: b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,res/Q23_app,n_sum_max"
+  !!write(20,*)
+  !!close(20)
+
+  lg_TkeV=2.74d0
+  do while(lg_TkeV.lt.3.d0)
+    T_keV=10.d0**lg_TkeV
+    T10=T_keV*1.1602d-3 !*1.1602d-3
+    B12=b*44.12d0
+    if(lg_TkeV.eq.2.74d0)then
+      lg_n_e_ini30=-3.1d0
+    else
+      lg_n_e_ini30=-5.d0
+    end if
+    do while(lg_n_e_ini30.le.2.d0)
+      n_e_ini30=10.d0**lg_n_e_ini30
+      !call EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu_keV,n_max)
+      call NeutrinoEmAnnih(T10,B12,Q23_app)
+      call NeutrinoAnn(b,T_keV,n_e_ini30,Q23,mu_keV,n_sum_max,n_max_e,n_max_p)
+      open(unit = 20, file = file_name, status = 'old',form='formatted',position="append")
+      !write(*,200)b,lg_TkeV,T_keV,lg_n_e_ini30,n_e_ini30,res,Q23_app,res/Q23_app,n_sum_max
+      !write(*,201)b,T_keV,n_e_ini30,mu_keV,res,Q23_app,res/Q23_app,n_sum_max
+      write(*,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,Q23/Q23_app,n_sum_max,n_max_e,n_max_p
+      write(20,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,Q23/Q23_app,n_sum_max,n_max_e,n_max_p
+      close(20)
+      lg_n_e_ini30=lg_n_e_ini30+0.1d0
+    end do
+    lg_TkeV=lg_TkeV+2.d-2
+    write(*,*)
+  end do
+
+return
+end subroutine Test_NeutrinoEmAnnih
+!==================================================================================================
+
+
 !=======================================================================================
 ! The subroutine calculates approximate(!) neutrino emissivity due to pair annihilation.
 ! The calculations are based on the approximation given in Kaminker+ 1992,Ph.Rev.D,46,10
@@ -55,57 +108,6 @@ contains
   return
   end function F
 end subroutine NeutrinoEmAnnih
-
-
-!==Subroutine testing Annihilation==!
-subroutine Test_NeutrinoEmAnnih()
-implicit none
-real*8::T_kev,b,T10,lg_TkeV,B12,Q23_app,n_e_ini30,lg_n_e_ini30,Q23,mu_keV
-integer::n_sum_max,n_max_e,n_max_p
-character(len=100):: file_name
-
-  200 format (8(es11.4,"   "),1(I6,"   "))
-  201 format (7(es11.4,"   "),3(I6,"   "))
-  202 format (1(A12),(es8.2))
-  b=3.d0
-  write(file_name,202)"./res/res_b_",b
-  write(*,*)"# file_name=",file_name; write(*,*)
-  open (unit = 20, file = file_name)
-  write(20,*)"# b=",b
-  write(20,*)"# Format: b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,res/Q23_app,n_sum_max"
-  write(20,*)
-  close(20)
-
-  lg_TkeV=1.d0
-  do while(lg_TkeV.lt.2.d0)
-    T_keV=10.d0**lg_TkeV
-    T10=T_keV*1.1602d-3 !*1.1602d-3
-    B12=b*44.12d0
-    !if(lg_TkeV.eq.1.94d0)then
-    !  lg_n_e_ini30=2.d0
-    !else
-      lg_n_e_ini30=-5.d0
-    !end if
-    do while(lg_n_e_ini30.le.2.d0)
-      n_e_ini30=10.d0**lg_n_e_ini30
-      !call EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu_keV,n_max)
-      call NeutrinoEmAnnih(T10,B12,Q23_app)
-      call NeutrinoAnn(b,T_keV,n_e_ini30,Q23,mu_keV,n_sum_max,n_max_e,n_max_p)
-      open(unit = 20, file = file_name, status = 'old',form='formatted',position="append")
-      !write(*,200)b,lg_TkeV,T_keV,lg_n_e_ini30,n_e_ini30,res,Q23_app,res/Q23_app,n_sum_max
-      !write(*,201)b,T_keV,n_e_ini30,mu_keV,res,Q23_app,res/Q23_app,n_sum_max
-      write(*,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,Q23/Q23_app,n_sum_max,n_max_e,n_max_p
-      write(20,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,Q23/Q23_app,n_sum_max,n_max_e,n_max_p
-      close(20)
-      lg_n_e_ini30=lg_n_e_ini30+0.1d0
-    end do
-    lg_TkeV=lg_TkeV+2.d-2
-    write(*,*)
-  end do
-
-return
-end subroutine Test_NeutrinoEmAnnih
-!==================================================================================================
 
 
 
@@ -344,7 +346,7 @@ contains
   real*8::mas,res,eps,Zp1,Zp2
   dimension mas(7)
   integer::n_max_int
-    eps=1.d-2; n_max_int=32
+    eps=1.d-2; n_max_int=64
     Zp1= -sqrt(T**2+2*T)
     Zp2=  sqrt(T**2+2*T)
     mas(1)=Zp1
