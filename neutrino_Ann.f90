@@ -10,8 +10,8 @@ character(len=100):: file_name
   200 format (8(es11.4,"   "),1(I6,"   "))
   201 format (7(es11.4,"   "),3(I6,"   "))
   202 format (1(A12),(es8.2))
-  b=2.d0
-  write(file_name,202)"./res/res_c_",b
+  b=2.d-1
+  write(file_name,202)"./res/res_t_",b
   write(*,*)"# file_name=",file_name; write(*,*)
   !!open (unit = 20, file = file_name)
   !!write(20,*)"# b=",b
@@ -19,13 +19,13 @@ character(len=100):: file_name
   !!write(20,*)
   !!close(20)
 
-  lg_TkeV=2.74d0
+  lg_TkeV=1.8d0
   do while(lg_TkeV.lt.3.d0)
     T_keV=10.d0**lg_TkeV
     T10=T_keV*1.1602d-3 !*1.1602d-3
     B12=b*44.12d0
-    if(lg_TkeV.eq.2.74d0)then
-      lg_n_e_ini30=-3.1d0
+    if(lg_TkeV.eq.1.8d0)then
+      lg_n_e_ini30=1.8d0
     else
       lg_n_e_ini30=-5.d0
     end if
@@ -147,14 +147,16 @@ real*8::sum_array  !==function==!
   Z2=  sqrt(T**2+2*T)!*4 !+2.d0
 
   mas(1:1000)=0.d0; det_n=11
-  n_sum=0
+  n_sum=16 !0
   do while(det_n.eq.11)
-    if(n_sum.le.8)then
+    if(n_sum.le.16)then
       call sum_over_diagonal_par(n_sum,n_max_e,n_max_p,b,T,Z1,Z2,mu,res_add)
     else
       !call sum_over_diagonal(n_sum,b,T,Z1,Z2,mu,res_add)
       call sum_over_diagonal_approx_par(n_sum,n_max_e,n_max_p,b,T,Z1,Z2,mu,res_add)
     end if
+write(*,*)"# ",n_sum,res_add,res
+read(*,*)
     res=res+res_add
     mas(n_sum+1)=res_add
 
@@ -193,7 +195,8 @@ contains
   end subroutine sum_over_diagonal
 
 
-
+  !=========================================================================================================
+  !=========================================================================================================
   subroutine sum_over_diagonal_par(n_sum,n_max_e,n_max_p,b,T,Z1,Z2,mu,res)
   use omp_lib 
   implicit none
@@ -213,8 +216,10 @@ contains
     else
       f=0.d0
     end if
+    !write(*,*)n_sum,n_e_task,n_p_task,f
     !$omp end parallel
     res=f
+    !write(*,*)"res=",res
   return
   end subroutine sum_over_diagonal_par
 
@@ -272,8 +277,8 @@ contains
   end subroutine sum_over_diagonal_approx
 
 
-
-
+  !=========================================================================================================
+  !=========================================================================================================
   subroutine sum_over_diagonal_approx_par(n_sum,n_max_e,n_max_p,b,T,Z1,Z2,mu,res)
   use omp_lib
   implicit none
@@ -284,8 +289,7 @@ contains
   real*8::fun,fun_new
   dimension num(n_sum+1),fun(n_sum+1),num_new(n_sum+1),fun_new(n_sum+1),added_num(n_sum+1)
   integer::i,N1,step_num
-  real*8::res,sum_array,sum_array2,sum_array2_new,eps,fun_task
-    !write(*,*)"#0 :",n_sum,n_max_e,n_max_p
+  real*8::res,sum_array,sum_array_new,eps,fun_task
     eps=1.d-2
     N1=3
     num(1)=1; n_e=num(1); n_p=n_sum-n_e 
@@ -297,14 +301,14 @@ contains
     num(3)=n_sum-1; n_e=num(3); n_p=n_sum-n_e 
     if((n_e.le.n_max_e).and.(n_p.le.n_max_p))then; fun(3)=NeutrinoSyn_intZe(b,T,n_e,n_p,Z1,Z2,mu); else; fun(3)=0.d0; end if
 
-    sum_array2=13.d0
-    sum_array2_new=2*sum_array2 
+    sum_array=13.d0
+    sum_array_new=2*sum_array
     step_num=0
     M1=11
-    do while((M1.gt.0).and.( (abs(sum_array2_new-sum_array2)/sum_array2_new).gt.eps ) )
-      !write(*,*)n_sum+1,N1,(abs(sum_array2_new-sum_array2)/sum_array2_new)
+    do while((M1.gt.0).and.( (abs(sum_array_new-sum_array)/sum_array_new).gt.eps ) )
+      !write(*,*)n_sum+1,N1,(abs(sum_array_new-sum_array)/sum_array_new)
       step_num=step_num+1
-      sum_array2=sum_array2_new
+      sum_array=sum_array_new
       call get_new_points_for_sum(n_sum+1,N1,num,fun,num_new,fun_new,added_num,M1)
       !write(*,*)"#3 M1=",M1
 
@@ -319,18 +323,20 @@ contains
         else 
           fun_task=0.d0
         end if
-        !write(*,*)omp_get_thread_num(),fun_task,M1
         fun_new(added_num(i))=fun_task
+write(*,*)n_sum,n_e_task,n_p_task,fun_task
         !$omp end parallel
       end if
       num(1:n_sum+1)=num_new(1:n_sum+1)
       fun(1:n_sum+1)=fun_new(1:n_sum+1)
       N1=N1+M1
-      call sum_over_incomplete_array2(n_sum+1,N1,num,fun,sum_array2_new)
+      call sum_over_incomplete_array2(n_sum+1,N1,num,fun,sum_array_new)
     end do
-    res=sum_array 
+    res=sum_array_new
+write(*,*)"res=",res
     if(n_sum.le.n_max_e)then; res=res+NeutrinoSyn_intZe(b,T,n_sum,0,Z1,Z2,mu); end if
     if(n_sum.le.n_max_p)then; res=res+NeutrinoSyn_intZe(b,T,0,n_sum,Z1,Z2,mu); end if
+write(*,*)"res=",res
   return
   end subroutine sum_over_diagonal_approx_par
 
@@ -732,9 +738,8 @@ end subroutine sum_over_incomplete_array
 !========================================================================================================
 subroutine sum_over_incomplete_array2(N,N1,num,fun,sum_array)
 implicit none
-integer,intent(in)::N,N1,num
-real*8,intent(in)::fun
-dimension num(N),fun(N)
+integer,intent(in)::N,N1,num(N)
+real*8,intent(in)::fun(N)
 integer::i,j
 real*8::sum_array,sum_add,a,b,c
   sum_array=0.d0

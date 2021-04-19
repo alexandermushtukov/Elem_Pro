@@ -1,15 +1,61 @@
+!====================================================================================
+!====================================================================================
+subroutine test_ee_pairs()
+implicit none
+real*8::b,n_e_ini30,T_keV
+real*8::n_e30,n_p30,mu
+real*8::lg_TkeV,lg_n_e_ini30,Q23,mu_keV
+integer::n_sum_max,n_max_e,n_max_p,n_max
+character(len=100):: file_name
+
+  201 format (7(es11.4,"   "),3(I6,"   "))
+  202 format (1(A13),(es8.2))
+
+  b=0.3d0
+  write(file_name,202)"./res/res_nu_",b
+  write(*,*)"# file_name=",file_name; write(*,*)
+  open (unit = 20, file = file_name)
+  write(20,*)"# b=",b
+  write(20,*)"# Format: b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,res/Q23_app,n_sum_max"
+  write(20,*)
+  close(20)
+  do while(b.le.1.d0)
+    lg_TkeV=2.d0
+    do while(lg_TkeV.le.3.d0)
+      T_keV=10.d0**lg_TkeV
+      lg_n_e_ini30=-5.d0
+
+      do while(lg_n_e_ini30.le.2.d0)
+        n_e_ini30=10.d0**lg_n_e_ini30
+        call EE_pairs(b,n_e_ini30,T_keV,n_e30,n_p30,mu,n_max,n_max_e,n_max_p)
+        open(unit = 20, file = file_name, status = 'old',form='formatted',position="append")
+        write(*,201)b,lg_TkeV,lg_n_e_ini30,mu
+        write(20,201)b,lg_TkeV,lg_n_e_ini30,mu!,n_max,n_max_e,n_max_p
+        close(20)
+        lg_n_e_ini30=lg_n_e_ini30+0.1d0
+      end do
+      lg_TkeV=lg_TkeV+0.02d0
+    end do
+    b=b+0.1d0
+  end do
+return
+end subroutine test_ee_pairs
+
+
 !==================================================================================
 ! This module is used in the subroutne calculating number dencities. 
 !==================================================================================
 module EE_pairs_help
-implicit none
-real*8::mu_mod,TkeV_mod
+  implicit none
+  real*8::mu_mod,TkeV_mod
 end module
 
+!==============================================================================
+!==============================================================================
 module EE_pairs_mag_help
-implicit none
-real*8::mu_mod,TkeV_mod,b_mod
-integer::n_mod
+  implicit none
+  real*8::mu_mod,TkeV_mod,b_mod
+  integer::n_mod
 end module
 
 

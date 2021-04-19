@@ -3,8 +3,8 @@ objects =	./obj/c.o \
 		./obj/electron_in_BF.o \
 		./obj/neutrino_Ann.o \
 		./obj/neutrino_Syn.o \
-		./obj/ee_pairs.o \
-		./obj/pressure.o
+		./obj/ee_pairs.o #\
+		#./obj/pressure.o
 
 objects_math_fnlib = ./obj/mf_fnlib_ai.o \
 		./obj/mf_fnlib_ai.o \
@@ -44,28 +44,17 @@ objects_math =	./obj/mf_bessel.o \
 		./obj/mf_vector_sk_mult.o \
 		./obj/mf_coord_sys.o
 
+
 objects_phys =	./obj/PhFun_eMaxvell.o \
 		./obj/PhFun_ComptonBF_cons_laws.o \
-		./obj/PhFun_ComptonBF_CrossSection.o \
-		./obj/PhFun_NormalWaves.o \
-		./obj/PhFun_Landau_Level_width.o \
-		./obj/PhFun_Cyclotron_absorb.o \
-		./obj/PhFun_magnetic_absorb.o \
-		./obj/PhFun_PlasmaDispFun.o \
-		./obj/PhFun_ComptonBF_Stokes.o \
-		./obj/PhFun_Gaunt_factors.o \
-		./obj/PhFun_MagneticDipole.o \
-		./obj/PhFun_GR_app.o \
-		./obj/PhFun_Polarization.o \
-		./obj/PhFun_dielec_tensor.o \
 		./obj/PhFun_blackbody.o
 
 objects_astro =	./obj/af_ref_frame.o
 
 
 
-c_nu2 : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
-	gfortran -fopenmp -o c_nu2 $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
+c : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
+	gfortran -fopenmp -o c $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
 
 
 ./obj/c.o : c.f90	
@@ -106,8 +95,6 @@ c_nu2 : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
 	gfortran -c -o ./obj/PhFun_ComptonBF_cons_laws.o ../PhFun/PhFun_ComptonBF_cons_laws.f90
 ./obj/PhFun_ComptonBF_CrossSection.o : ../PhFun/PhFun_ComptonBF_CrossSection.f90	
 	gfortran -c -o ./obj/PhFun_ComptonBF_CrossSection.o ../PhFun/PhFun_ComptonBF_CrossSection.f90
-./obj/PhFun_NormalWaves.o : ../PhFun/PhFun_NormalWaves.f90
-	gfortran -c -o ./obj/PhFun_NormalWaves.o ../PhFun/PhFun_NormalWaves.f90
 ./obj/PhFun_Landau_Level_width.o : ../PhFun/PhFun_Landau_Level_width.f90
 	gfortran -c -o ./obj/PhFun_Landau_Level_width.o ../PhFun/PhFun_Landau_Level_width.f90
 ./obj/PhFun_Cyclotron_absorb.o : ../PhFun/PhFun_Cyclotron_absorb.f90
@@ -130,6 +117,9 @@ c_nu2 : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
 	gfortran -c -o ./obj/PhFun_dielec_tensor.o ../PhFun/PhFun_dielec_tensor.f90
 ./obj/PhFun_blackbody.o : ../PhFun/PhFun_blackbody.f90
 	gfortran -c -o ./obj/PhFun_blackbody.o ../PhFun/PhFun_blackbody.f90
+
+
+
 
 
 

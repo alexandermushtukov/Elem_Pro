@@ -14,6 +14,7 @@ integer::det,n_max,n_max_e,n_max_p,n_sum_max
   !call test_Ai()
   !call Test_Compt_Ave()
   call Test_NeutrinoEmAnnih()
+  !call test_ee_pairs()
   !call Test_ComptPressure_Max()
   !call Test_ComptPressure01()
   goto 122
@@ -89,7 +90,7 @@ integer::det,n_max,n_max_e,n_max_p,n_sum_max
       !write(23,201)b,n_e30,TkeV,res,n_max_e,n_max_p  !,res_,res_app!/1.d3
       !close(23)
 
-      call EE_pairs(b,n_e30,TkeV,n_e30_,n_p30_,mu,n_max)
+!!!call EE_pairs(b,n_e30,TkeV,n_e30_,n_p30_,mu,n_max,n_max_e,n_max_p)
       write(*,*)b,n_e30,TkeV,n_e30_,n_p30_,mu,n_max
       !read(*,*)
       !call NeutrinoAnn(b,TkeV,n_e30,res_,n_sum_max)
@@ -150,7 +151,7 @@ integer::det,n_max,n_max_e,n_max_p,n_sum_max
   do while(TkeV.le.2.d2)
     n_e_ini30=1.d-3 !1.d0
     !call EE_pairs_app1(TkeV/511.d0,n30app)
-    call EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu,n_max)
+!!!call EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu,n_max,n_max_e,n_max_p)
     call EE_pairs_app1(TkeV/511.d0,res)
     call EE_pairs_app2(TkeV/511.d0,res_)
     !write(*,*)TkeV,n_e_ini30,n_e30,n_p30,n_p30/n_e_ini30
@@ -211,7 +212,7 @@ implicit none
 real*8,intent(in)::dotM10,m,beta
 real*8::T10,res,n_e_ini30,n_e30,n_p30,TkeV,mu,R6,pairs,P24,P24crit
 real*8::res_out,res_bil12,res_bil13,res_bil14,B12
-integer::det,n_max
+integer::det,n_max,n_max_e,n_max_p
   n_e_ini30=2.d-7*dotM10/beta
   R6=1.d0
   T10=1.d-2
@@ -223,7 +224,7 @@ integer::det,n_max
   det=13
   do while(T10.le.3.2d0)
     TkeV=T10*1.d7/11600.d0
-    call EE_pairs(0.d0,n_e_ini30,TkeV,n_e30,n_p30,n_max)
+!!!call EE_pairs(0.d0,n_e_ini30,TkeV,n_e30,n_p30,n_max,n_max_e,n_max_p)
     mu=0.5d0-n_p30/(2.d0*(n_e_ini30+n_e30))
     pairs=2.d0*n_p30/(n_e_ini30+n_e30-n_p30)
     !res=2.21d0*m/R6-7.5d0*beta**2-5.053d6*T10**4*beta/dotM10-3.45d-2*T10/mu-8.2d-3*pairs
