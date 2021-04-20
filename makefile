@@ -42,6 +42,7 @@ objects_math =	./obj/mf_bessel.o \
 		./obj/mf_matrix_matrix.o \
 		./obj/mf_numbers.o \
 		./obj/mf_vector_sk_mult.o \
+		./obj/mf_random.o \
 		./obj/mf_coord_sys.o
 
 
@@ -83,6 +84,8 @@ c : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
 	gfortran -c -o ./obj/mf_fnlib_inits.o mf_fnlib_inits.f
 ./obj/mf_fnlib_r9aimp.o : mf_fnlib_r9aimp.f 	
 	gfortran -c -o ./obj/mf_fnlib_r9aimp.o mf_fnlib_r9aimp.f
+./obj/mf_random.o : ../mf/mf_random.f90	
+	gfortran -c -o ./obj/mf_random.o ../mf/mf_random.f90
 
 
 ./obj/af_ref_frame.o : ../AstroFun/af_ref_frame.f90	
