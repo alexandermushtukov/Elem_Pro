@@ -10,18 +10,18 @@ real*8::Z_e_max(5000),Z_p_max(5000)
 
   200 format (8(es11.4,"   "),1(I6,"   "))
   201 format (7(es11.4,"   "),4(I6,"   "))
-  202 format (1(A20),(es8.2))
-  b=1.d-1
-  write(file_name,202)"./res/res_nu_MC2e6_b",b
+  202 format (1(A21),(es8.2))
+  b=0.8d0
+  write(file_name,202)"./res/res2_nu_MC2e6_b",b
   write(*,*)"# file_name=",file_name; write(*,*)
   open (unit = 20, file = file_name)
   write(20,*)"# b=",b
-  write(20,*)"# Format: b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,res/Q23_app,n_sum_max"
+  write(20,*)"# Format: b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,res/Q23_app,n_sum_max,det_res"
   write(20,*)
   close(20)
 
-  lg_TkeV=1.d0
-  do while(lg_TkeV.lt.2.d0)
+  lg_TkeV=2.d0
+  do while(lg_TkeV.lt.3.d0)
     T_keV=10.d0**lg_TkeV
     T10=T_keV*1.1602d-3 !*1.1602d-3
     B12=b*44.12d0
@@ -171,7 +171,7 @@ real*8::Z_e_max(5000),Z_p_max(5000),sum_array_5_last
           sum_array_5_last=sum_array_5_last+mas(n_sum+1-i)
           i=i+1
         end do
-!write(*,*)"#criterio:",(sum_array_5_last/sum_array(mas,1000,1,n_sum+1)),(eps*5.d0/(n_sum+1))
+        !write(*,*)"#criterio:",(sum_array_5_last/sum_array(mas,1000,1,n_sum+1)),(eps*5.d0/(n_sum+1))
         if( (sum_array_5_last/sum_array(mas,1000,1,n_sum+1)) .lt. (eps*5.d0/(n_sum+1))  )then
           det_n=14
           n_sum_max=n_sum
@@ -235,9 +235,6 @@ contains
     else
       f=0.d0
     end if
-!write(*,*)"#   ",n_sum,n_e_task,n_p_task,f
-!write(*,*)"## ",n_sum,n_e_task,n_p_task,f,Z_e_max(n_e_task+1),Z_p_max(n_p_task+1)
-!write(*,*)"n_e=",n_e_task,Z_e_max(n_e_task+1)
     !$omp end parallel
     res=f
     !write(*,*)"res=",res
@@ -311,18 +308,14 @@ contains
           fun_task=0.d0
         end if
         fun_new(added_num(i))=fun_task
-!write(*,*)"## ",n_sum,n_e_task,n_p_task,fun_task,Z_e_max(n_e_task+1),Z_p_max(n_p_task+1)
         !$omp end parallel
       end if
       num(1:n_sum+1)=num_new(1:n_sum+1)
       fun(1:n_sum+1)=fun_new(1:n_sum+1)
       N1=N1+M1
-!write(*,*)num(1:n_sum+1)
-!write(*,*)fun(1:n_sum+1)
       call sum_over_incomplete_array2(n_sum+1,N1,num,fun,sum_array_new)
     end do
     res=sum_array_new
-!write(*,*)"res=",res
 
     !==add two points to the sum==!
     if(n_sum.le.n_max_e)then
@@ -335,7 +328,6 @@ contains
       res=res+Ann_integration_MC(b,T*511,mu*511,0,n_sum,&
                   -Z_e_max(1),Z_e_max(1),-Z_p_max(n_sum+1),Z_p_max(n_sum+1),n_MC)
     end if
-!write(*,*)"res=",res
   return
   end subroutine sum_over_diagonal_approx_par
 
