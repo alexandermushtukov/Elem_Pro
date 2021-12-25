@@ -13,27 +13,31 @@ objects_math_fnlib = ./obj/mf_fnlib_ai.o \
 		./obj/mf_fnlib_inits.o \
 		./obj/mf_fnlib_r9aimp.o 
 
-objects_math =	./obj/mf_bessel.o \
+objects_math =	./obj/mf_algebra_polinom.o \
+		./obj/mf_bessel.o \
 		./obj/mf_c.o \
+		./obj/mf_coord_sys.o \
+		./obj/mf_equations.o \
 		./obj/mf_ermit_pol.o \
 		./obj/mf_erm_link.o \
 		./obj/mf_fact.o \
 		./obj/mf_fi_function.o \
+		./obj/mf_for_mass.o \
 		./obj/mf_gamma-function.o \
 		./obj/mf_gener_fun.o \
+		./obj/mf_geom_2d.o \
+		./obj/mf_geom_3d.o \
 		./obj/mf_g.o \
 		./obj/mf_integrals.o \
 		./obj/mf_integral_2d.o \
 		./obj/mf_int_gauss_100.o \
-		./obj/mf_int_gauss_10.o \
-		./obj/mf_int_gauss_20.o \
-		./obj/mf_int_gauss_6.o \
 		./obj/mf_int_gauss.o \
 		./obj/mf_intGauss.o \
 		./obj/mf_intGauss_p.o \
 		./obj/mf_int_G.o \
 		./obj/mf_intSimps.o \
 		./obj/mf_intSimp_p.o \
+		./obj/mf_interpol.o \
 		./obj/mf_ksi.o \
 		./obj/mf_laguer_exp.o \
 		./obj/mf_laguer.o \
@@ -41,9 +45,10 @@ objects_math =	./obj/mf_bessel.o \
 		./obj/mf_laguer_n.o \
 		./obj/mf_matrix_matrix.o \
 		./obj/mf_numbers.o \
-		./obj/mf_vector_sk_mult.o \
 		./obj/mf_random.o \
-		./obj/mf_coord_sys.o
+		./obj/mf_vector_sk_mult.o \
+		./obj/lib_specfun.o \
+		./obj/mf_intExp.o
 
 
 objects_phys =	./obj/PhFun_eMaxvell.o \
@@ -123,9 +128,13 @@ c : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
 
 
 
-
-
-
+	
+./obj/lib_specfun.o : ../mf/lib_specfun.f90	
+	gfortran -c -o ./obj/lib_specfun.o ../mf/lib_specfun.f90
+./obj/mf_DIN_djmuz.o : ../mf/mf_DIN_djmuz.f	
+	gfortran -c -o ./obj/mf_DIN_djmuz.o ../mf/mf_DIN_djmuz.f
+./obj/mf_DIN_besselkn.o : ../mf/mf_DIN_besselkn.f	
+	gfortran -c -o ./obj/mf_DIN_besselkn.o ../mf/mf_DIN_besselkn.f
 ./obj/mf_tcrUL_VF.o : ../mf/mf_tcrUL_VF.f	
 	gfortran -c -o ./obj/mf_tcrUL_VF.o ../mf/mf_tcrUL_VF.f
 ./obj/mf_expmag_VF.o : ../mf/mf_expmag_VF.f	
@@ -148,6 +157,10 @@ c : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
 	gfortran -c -o ./obj/mf_gamma-function.o ../mf/mf_gamma-function.f90
 ./obj/mf_gener_fun.o : ../mf/mf_gener_fun.f90	
 	gfortran -c -o ./obj/mf_gener_fun.o ../mf/mf_gener_fun.f90
+./obj/mf_geom_2d.o : ../mf/mf_geom_2d.f90	
+	gfortran -c -o ./obj/mf_geom_2d.o ../mf/mf_geom_2d.f90
+./obj/mf_geom_3d.o : ../mf/mf_geom_3d.f90	
+	gfortran -c -o ./obj/mf_geom_3d.o ../mf/mf_geom_3d.f90
 ./obj/mf_g.o : ../mf/mf_g.f90	
 	gfortran -c -o ./obj/mf_g.o ../mf/mf_g.f90
 ./obj/mf_integrals.o : ../mf/mf_integrals.f90	
@@ -156,12 +169,6 @@ c : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
 	gfortran -c -o ./obj/mf_integral_2d.o ../mf/mf_integral_2d.f90
 ./obj/mf_int_gauss_100.o : ../mf/mf_int_gauss_100.f90	
 	gfortran -c -o ./obj/mf_int_gauss_100.o ../mf/mf_int_gauss_100.f90
-./obj/mf_int_gauss_10.o : ../mf/mf_int_gauss_10.f90	
-	gfortran -c -o ./obj/mf_int_gauss_10.o ../mf/mf_int_gauss_10.f90
-./obj/mf_int_gauss_20.o : ../mf/mf_int_gauss_20.f90	
-	gfortran -c -o ./obj/mf_int_gauss_20.o ../mf/mf_int_gauss_20.f90
-./obj/mf_int_gauss_6.o : ../mf/mf_int_gauss_6.f90	
-	gfortran -c -o ./obj/mf_int_gauss_6.o ../mf/mf_int_gauss_6.f90
 ./obj/mf_int_gauss.o : ../mf/mf_int_gauss.f90	
 	gfortran -c -o ./obj/mf_int_gauss.o ../mf/mf_int_gauss.f90
 ./obj/mf_intGauss.o : ../mf/mf_intGauss.FOR
@@ -194,6 +201,21 @@ c : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
 	gfortran -c -o ./obj/mf_vector_sk_mult.o ../mf/mf_vector_sk_mult.f90
 ./obj/mf_coord_sys.o : ../mf/mf_coord_sys.f90	
 	gfortran -c -o ./obj/mf_coord_sys.o ../mf/mf_coord_sys.f90
+./obj/mf_algebra_polinom.o : ../mf/mf_algebra_polinom.f90	
+	gfortran -c -o ./obj/mf_algebra_polinom.o ../mf/mf_algebra_polinom.f90
+./obj/mf_interpol.o : ../mf/mf_interpol.f90	
+	gfortran -c -o ./obj/mf_interpol.o ../mf/mf_interpol.f90
+./obj/mf_for_mass.o : ../mf/mf_for_mass.f90	
+	gfortran -c -o ./obj/mf_for_mass.o ../mf/mf_for_mass.f90
+./obj/mf_random.o : ../mf/mf_random.f90	
+	gfortran -c -o ./obj/mf_random.o ../mf/mf_random.f90
+./obj/mf_noise.o : ../mf/mf_noise.f90	
+	gfortran -c -o ./obj/mf_noise.o ../mf/mf_noise.f90
+./obj/mf_equations.o : ../mf/mf_equations.f90	
+	gfortran -c -o ./obj/mf_equations.o ../mf/mf_equations.f90
+./obj/mf_intExp.o : ../mf/mf_intExp.f90	
+	gfortran -c -o ./obj/mf_intExp.o ../mf/mf_intExp.f90
+
 
 
 

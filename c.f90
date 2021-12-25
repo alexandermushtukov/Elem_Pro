@@ -13,6 +13,7 @@ integer::det,n_max,n_max_e,n_max_p,n_sum_max
   200 format (4(es11.4,"   "),1(I6,"   "),6(es11.4,"   "))
   !call test_Ai()
   !call Test_Compt_Ave()
+  !call test_Fnn()
   call Test_NeutrinoEmAnnih()
   !call test_ee_pairs()
   !call Test_ComptPressure_Max()
@@ -23,7 +24,6 @@ integer::det,n_max,n_max_e,n_max_p,n_sum_max
   !goto 333
   !goto 123
 
-  !call test_Fnn()
   !goto 122
 
   !call TestSigmaTot()

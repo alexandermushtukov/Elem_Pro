@@ -171,7 +171,7 @@ end function n_p30_max
 ! n_e_ini30 - the initial nuber density of electrons
 ! TkeV - the temperature in keV.
 ! Finally we will get: n_e_ini30=n_e30-n_p30
-! Chemical potential is in keV (?)
+! Chemical potential is in keV.
 !===================================================================================================
 subroutine EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu,n_max,n_max_e,n_max_p,Z_e_max,Z_p_max)
 !use EE_pairs_help
@@ -193,7 +193,6 @@ real*8::Z_e_max(5000),Z_p_max(5000)
     call EE_pairs_mag_mu_fix(b,TkeV,mu1,n_e30,n_p30,n_max,n_max_e,n_max_p)
   end if
 
-  !write(*,*)n_e_ini30,n_e30-n_p30,n_e30,n_p30
   if(n_e_ini30.ge.(n_e30-n_p30))then
     do while(n_e_ini30.ge.(n_e30-n_p30))
       mu1=mu1*2
@@ -296,7 +295,8 @@ contains
 
   !==================================================================================================================
   ! Magnetic case.
-  ! Subroutine calculates electron and positron number dencities for a fixed chemical potential and temperature
+  ! Subroutine calculates electron and positron number dencities for a fixed chemical potential and temperature.
+  ! n_max_e (n_max_p) - the maximal Landau level number, which is still useful for electron (positrons) distribution.
   !==================================================================================================================
   subroutine EE_pairs_mag_mu_fix(b,TkeV,mu,n_e30,n_p30,n_max,n_max_e,n_max_p)
   use EE_pairs_mag_help
@@ -305,46 +305,74 @@ contains
   real*8::n_e30,n_p30,eps,g_n,sum_e,sum_p,n_e30_add,n_p30_add,param,b_final
   integer::i,n_max,det
   integer::n_max_e,n_max_p         !==the maximal Landau level numbers for electrons and positrons==!
+
     eps=2.d-2
     mu_mod=mu
     TkeV_mod=TkeV
     b_mod=b
+    !==rough estimation for the maximal possible Landau level==!
     if(TkeV/(b*511.d0).le.0.1d0)then
       n_max=1
     else
       n_max=7*TkeV/(b*511.d0)+15
     end if
+
     i=0; n_max_e=0; n_max_p=0
     param=1.d-7
     n_e30=0.d0
     n_p30=0.d0
     sum_e=n_e30
     sum_p=n_p30
+
     det=11
     do while(det.eq.11)
       do while(i.le.n_max)
         n_mod=i
+        !==dealing with electrons==!
         if(i.eq.0)then; g_n=1.d0; else; g_n=2.d0; end if
         call int_ImproperInt_simpson(Ie_mag ,0.d0,1.d-3,eps,n_e30_add,b_final)
         n_e30_add=2*g_n*n_e30_add
-        if(n_e30_add.lt.(param*n_e30))then; n_max_e=min(n_max_e,i); else; n_max_e=i; end if
+        if(n_e30_add.lt.(param*n_e30))then
+          n_max_e=min(n_max_e,i)
+        else
+          n_max_e=i
+        end if
         n_e30     = n_e30+n_e30_add
+
+        !==deaking with positrons==!
         if(mu_mod.le.10.d0*TkeV_mod)then
           call int_ImproperInt_simpson(Ip_mag ,0.d0,1.d-3,eps,n_p30_add,b_final)
           n_p30_add = 2*g_n*n_p30_add
-          if(n_p30_add.lt.(param*n_p30))then; n_max_p=min(n_max_p,i); else; n_max_p=i; end if
+          if(n_p30_add.lt.(param*n_p30))then
+            n_max_p=min(n_max_p,i)
+          else
+            n_max_p=i
+          end if
+!write(*,*)"#a2",n_p30,n_p30_add,n_p30_add/(n_p30/i)
           n_p30     = n_p30+n_p30_add
         else
           call int_ImproperInt_simpson(Ip_mag2,0.d0,1.d-3,eps,n_p30_add,b_final)
           n_p30_add = 2*g_n*n_p30_add/exp(mu_mod/TkeV_mod)
-          if(n_p30_add.lt.(param*n_p30))then; n_max_p=min(n_max_p,i); else; n_max_p=i; end if
+          if(n_p30_add.lt.(param*n_p30))then
+            n_max_p=min(n_max_p,i)
+          else
+            n_max_p=i
+          end if
           n_p30     = n_p30+n_p30_add
         end if
+        !write(*,*)"#a3",n_max,n_max_e,n_max_p
         i=i+1
       end do
-      if( ((n_e30-sum_e)/n_e30).lt.eps )then
+
+      !write(*,*)"#a2 ",n_max,n_max_e,n_max_p
+
+      !if( (((n_e30-sum_e)/n_e30).lt.eps) .and. (((n_p30-sum_p)/n_p30).lt.eps) )then
+      if( (((n_e30-sum_e)/n_e30).lt.eps) )then
+        !==we have obtained the necessary accuracy==!
+!write(*,*)"!!!",mu,n_e30,sum_e,((n_e30-sum_e)/n_e30)
         det=1
       else
+        !==we have to make the next step==!
         sum_e=n_e30
         sum_p=n_p30
         n_max=n_max*2
@@ -352,7 +380,6 @@ contains
     end do
     n_e30=0.4415d0*n_e30*b
     n_p30=0.4415d0*n_p30*b
-    !write(*,*)"#EE_pairs_mag_mu_fix",n_max_e,n_max_p
   122 return
   end subroutine EE_pairs_mag_mu_fix
 

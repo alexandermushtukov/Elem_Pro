@@ -1,18 +1,20 @@
-!===============================================================================================
-! Subroutine testing Annihilation.
-!===============================================================================================
+!====================================================================================================
+! Subroutine constructs the Data Base of neutrino energy losses due to the annihilation of e-e-pairs.
+!====================================================================================================
 subroutine Test_NeutrinoEmAnnih()
 implicit none
 real*8::T_kev,b,T10,lg_TkeV,B12,Q23_app,n_e_ini30,lg_n_e_ini30,Q23,mu_keV
 integer::n_sum_max,n_max_e,n_max_p,det_res
 character(len=100):: file_name
 real*8::Z_e_max(5000),Z_p_max(5000)
+real*8::IntNeutrinoAnn,x,Fnn  !==function==!
 
   200 format (8(es11.4,"   "),1(I6,"   "))
   201 format (7(es11.4,"   "),4(I6,"   "))
   202 format (1(A21),(es8.2))
-  b=0.8d0
-  write(file_name,202)"./res/res2_nu_MC2e6_b",b
+  b=0.7d0
+  !write(file_name,202)"./res/res3_nu_MC2e6_b",b
+  write(file_name,202)"./res/res3_nu_MCnew_d",b
   write(*,*)"# file_name=",file_name; write(*,*)
   open (unit = 20, file = file_name)
   write(20,*)"# b=",b
@@ -20,26 +22,31 @@ real*8::Z_e_max(5000),Z_p_max(5000)
   write(20,*)
   close(20)
 
-  lg_TkeV=2.d0
-  do while(lg_TkeV.lt.3.d0)
+  !lg_TkeV=2.d0
+  lg_TkeV=2.5d0
+  !do while(lg_TkeV.lt.2.5d0)
+  do while(lg_TkeV.le.3.d0)
     T_keV=10.d0**lg_TkeV
     T10=T_keV*1.1602d-3 !*1.1602d-3
     B12=b*44.12d0
-    !if(lg_TkeV.eq.1.8d0)then
+
+    !if(lg_TkeV.eq.2.58d0)then
     !  lg_n_e_ini30=1.8d0
     !else
       lg_n_e_ini30=-5.d0
     !end if
+
     do while(lg_n_e_ini30.le.2.d0)
       n_e_ini30=10.d0**lg_n_e_ini30
       !call EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu_keV,n_max,Z_e_max,Z_p_max)
-      call NeutrinoEmAnnih(T10,B12,Q23_app)
+      call NeutrinoAnn_app(T10,B12,Q23_app)
       call NeutrinoAnn(b,T_keV,n_e_ini30,Q23,mu_keV,n_sum_max,n_max_e,n_max_p,det_res)
       open(unit = 20, file = file_name, status = 'old',form='formatted',position="append")
       !write(*,200)b,lg_TkeV,T_keV,lg_n_e_ini30,n_e_ini30,res,Q23_app,res/Q23_app,n_sum_max
       !write(*,201)b,T_keV,n_e_ini30,mu_keV,res,Q23_app,res/Q23_app,n_sum_max
       write(*,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,Q23/Q23_app,n_sum_max,n_max_e,n_max_p,det_res
       write(20,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,Q23/Q23_app,n_sum_max,n_max_e,n_max_p,det_res
+
       close(20)
       lg_n_e_ini30=lg_n_e_ini30+0.1d0
     end do
@@ -57,7 +64,7 @@ end subroutine Test_NeutrinoEmAnnih
 ! The calculations are based on the approximation given in Kaminker+ 1992,Ph.Rev.D,46,10
 ! See eq.(26) there. The temperature should be well above Fermi temperature.
 !=======================================================================================
-subroutine NeutrinoEmAnnih(T10,B12,Q23)
+subroutine NeutrinoAnn_app(T10,B12,Q23)
 implicit none
 real*8,intent(in)::T10,B12
 real*8::Q23,Qc23,C2V,C2A,t,b
@@ -108,7 +115,7 @@ contains
     F=1.d0/R(1)/R(2)/R(3)
   return
   end function F
-end subroutine NeutrinoEmAnnih
+end subroutine NeutrinoAnn_app
 
 
 
@@ -135,7 +142,7 @@ real*8::Z_e_max(5000),Z_p_max(5000),sum_array_5_last
   call EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu_keV,n_max,n_max_e,n_max_p,Z_e_max,Z_p_max)
   T=TkeV/511
   mu=mu_keV/511
-  !write(*,*)b,TkeV,mu,n_max
+  !write(*,*)"# chemical potential: ",b,TkeV,mu,n_max,n_max_e,n_max_p
   !read(*,*)
 
   !n_max=1000   !==the actual n_max is found later authomatically==!
@@ -147,12 +154,15 @@ real*8::Z_e_max(5000),Z_p_max(5000),sum_array_5_last
   Z2=  sqrt(T**2+2*T)!*4 !+2.d0
 
   mas(1:1000)=0.d0; det_n=11
+
   n_sum=0
+  !n_sum=77
+  !write(*,*)"#",n_sum
   do while(det_n.eq.11)
     if(n_sum.le.8)then
       call sum_over_diagonal_par(n_sum,n_max_e,n_max_p,Z_e_max,Z_p_max,b,T,Z1,Z2,mu,res_add)
     else
-      !call sum_over_diagonal(n_sum,b,T,Z1,Z2,mu,res_add)
+      !call sum_over_diagonal_par(n_sum,n_max_e,n_max_p,Z_e_max,Z_p_max,b,T,Z1,Z2,mu,res_add)
       call sum_over_diagonal_approx_par(n_sum,n_max_e,n_max_p,Z_e_max,Z_p_max,b,T,Z1,Z2,mu,res_add)
     end if
     res=res+res_add
@@ -172,17 +182,17 @@ real*8::Z_e_max(5000),Z_p_max(5000),sum_array_5_last
           i=i+1
         end do
         !write(*,*)"#criterio:",(sum_array_5_last/sum_array(mas,1000,1,n_sum+1)),(eps*5.d0/(n_sum+1))
-        if( (sum_array_5_last/sum_array(mas,1000,1,n_sum+1)) .lt. (eps*5.d0/(n_sum+1))  )then
+        if( (sum_array_5_last/sum_array(mas,1000,1,n_sum+1)) .lt. (eps*5/(n_sum+1))  )then
           det_n=14
           n_sum_max=n_sum
         end if
         !==additional criterio 2==!
-        if(n_sum.gt.500)then
+        if(n_sum.ge.n_max)then
           det_n=15
         end if
       end if
     end if
-
+    !write(*,*)"###",n_sum,res,res_add
     n_sum=n_sum+1
   end do
   res=res*b/3/(2*pi)**5   !==10^(23)==!
@@ -220,24 +230,39 @@ contains
   integer::n_e,n_p,n_e_task,n_p_task,n_MC
   real*8::res
   real*8::Ann_integration_MC    !==function==!
-    n_MC=int(2.e6)
+
+    !write(*,*)"##1"
+    !n_e_task=38; n_p_task=39
+    !n_e_task=50; n_p_task=50
+    !f=Ann_integration_MC(b,T*511,mu*511,n_e_task,n_p_task,&
+    !-Z_e_max(n_e_task+1),Z_e_max(n_e_task+1),-Z_p_max(n_p_task+1),Z_p_max(n_p_task+1),int(2.e5))
+    !write(*,*)f
+    !write(*,*)"##2"
+    !n_e_task=38; n_p_task=41
+    !n_e_task=50; n_p_task=50
+    !f=Ann_integration_MC(b,T*511,mu*511,n_e_task,n_p_task,&
+    !  -Z_e_max(n_e_task+1),Z_e_max(n_e_task+1),-Z_p_max(n_p_task+1),Z_p_max(n_p_task+1),int(2.e5))
+    !write(*,*)f
+    !read(*,*)
+
+    n_MC=int(1.e4)
     res=0.d0
     n_e=0
     f=0.d0
     call omp_set_num_threads(n_sum+1)
     !$omp parallel private(n_e_task,n_p_task) firstprivate(n_sum) reduction(+: f)
-    n_e_task=omp_get_thread_num()
-    n_p_task=n_sum-n_e_task
-    if((n_e_task.le.n_max_e).and.(n_p_task.le.n_max_p))then
-      !f=NeutrinoSyn_intZe(b,T,n_e_task,n_p_task,Z1,Z2,mu)
-      f=Ann_integration_MC(b,T*511,mu*511,n_e_task,n_p_task,&
-        -Z_e_max(n_e_task+1),Z_e_max(n_e_task+1),-Z_p_max(n_p_task+1),Z_p_max(n_p_task+1),n_MC)
-    else
-      f=0.d0
-    end if
+       n_e_task=omp_get_thread_num()
+       n_p_task=n_sum-n_e_task
+       if((n_e_task.le.n_max_e).and.(n_p_task.le.n_max_p))then
+         !f=NeutrinoSyn_intZe(b,T,n_e_task,n_p_task,Z1,Z2,mu)
+         f=Ann_integration_MC(b,T*511,mu*511,n_e_task,n_p_task,&
+           -Z_e_max(n_e_task+1),Z_e_max(n_e_task+1),-Z_p_max(n_p_task+1),Z_p_max(n_p_task+1),n_MC)
+       else
+         f=0.d0
+       end if
+       !write(*,*)n_e_task,n_p_task,f
     !$omp end parallel
     res=f
-    !write(*,*)"res=",res
   return
   end subroutine sum_over_diagonal_par
 
@@ -256,7 +281,7 @@ contains
   integer::i,N1,step_num,n_MC
   real*8::res,sum_array,sum_array_new,eps,fun_task
   real*8::Ann_integration_MC    !==function==!
-    n_MC=int(2.e6)
+    n_MC=int(2.e5)
     eps=1.d-2
 
     !==get the first three points for the sum==!
@@ -317,7 +342,7 @@ contains
     end do
     res=sum_array_new
 
-    !==add two points to the sum==!
+    !==add two "edge" points to the sum==!
     if(n_sum.le.n_max_e)then
       !res=res+NeutrinoSyn_intZe(b,T,n_sum,0,Z1,Z2,mu)
       res=res+Ann_integration_MC(b,T*511,mu*511,n_sum,0,&
@@ -439,15 +464,18 @@ end subroutine NeutrinoAnn
 ! Monte Carlo 3d integration.
 ! n_max - number of runs in MC simulation.
 !=============================================================================================
-real*8 function Ann_integration_MC(b,T_keV,mu_keV,n_e,n_p,Ze_min,Ze_max,Zp_min,Zp_max,n_max)
+real*8 function Ann_integration_MC(b,T_keV,mu_keV,n_e,n_p,Ze_min,Ze_max,Zp_min,Zp_max,n_m)
 implicit none
 real*8,intent(in)::b,T_keV,mu_keV,Ze_min,Ze_max,Zp_min,Zp_max
-integer,intent(in)::n_e,n_p,n_max
-real*8::random,Ze,Zp,q,q_z,omega,q_p_max,res
-integer::i
+integer,intent(in)::n_e,n_p,n_m
+real*8::random,Ze,Zp,q,q_z,omega,q_p_max,res,res_,eps
+integer::i,n_max,det,n_m_max
 real*8::IntNeutrinoAnn  !==function==!
-  !n_max=int(1.e3)
+  eps=2.d-2
+  n_m_max=int(1.e7)        !==the maximal possible number of point in MC integration==!
   call init_random_seed()
+
+  n_max=n_m
   res=0.d0
   i=1
   do while(i.le.n_max)
@@ -463,7 +491,37 @@ real*8::IntNeutrinoAnn  !==function==!
     res=res+IntNeutrinoAnn(n_e,n_p,Ze,Zp,q_z,q,b,mu_keV/511,T_keV/511)*q_p_max
     i=i+1
   end do
-  Ann_integration_MC=res/(i-1)*(Ze_max-Ze_min)*(Zp_max-Zp_min)!*omega
+  res=res/(i-1)
+  res_=res
+
+  !==try to get the necessary accuracy==!
+  det=11
+  do while(det.eq.11)
+    n_max=n_max*2
+    res=res*(i-1)
+    !i=1   !==we start from the last i==!
+    do while(i.le.n_max)
+      call RANDOM_NUMBER(random)
+      Ze=Ze_min+random*(Ze_max-Ze_min)
+      call RANDOM_NUMBER(random)
+      Zp=Zp_min+random*(Zp_max-Zp_min)
+      q_z=Ze+Zp
+      omega=sqrt(1.d0+2*n_e*b+Ze**2)+sqrt(1.d0+2*b*n_p+Zp**2)
+      q_p_max=sqrt(omega**2-q_z**2)
+      call RANDOM_NUMBER(random)
+      q=random*q_p_max
+      res=res+IntNeutrinoAnn(n_e,n_p,Ze,Zp,q_z,q,b,mu_keV/511,T_keV/511)*q_p_max
+      i=i+1
+    end do
+    res=res/(i-1)
+    if( ( abs((res-res_)/res).lt.eps ).or.( (res.eq.0.d0).and.(res_.eq.0.d0) ).or.(n_max.gt.n_m_max) )then
+      det=12
+    else
+      res_=res
+    end if
+  end do
+
+  Ann_integration_MC=res*(Ze_max-Ze_min)*(Zp_max-Zp_min)!*omega     !==fix it==! : is it a mistake?
 return
 end function Ann_integration_MC
 
@@ -512,14 +570,25 @@ real*8 function IntNeutrinoAnn(n_e,n_p,Z_e,Z_p,q_z,q_p,b,mu,T)
 implicit none
 integer,intent(in)::n_e,n_p
 real*8,intent(in)::Z_e,Z_p,q_z,q_p,b,mu,T
+!integer::n_e,n_p
+!real*8::Z_e,Z_p,q_z,q_p,b,mu,T
 real*8::E_e,E_p,omega
 real*8::res
+
+!n_e=50
+!n_p=50
+!Z_e=27.13d0
+!Z_p=19.35d0
+!q_z=46.5d0
+!q_p=8.32d0
+!b=0.8d0
+!mu=4.47d0
+!T=0.74d0
   if(q_p.ne.0.d0)then
     E_e=sqrt(1.d0+2*b*n_e+Z_e**2)
     E_p=sqrt(1.d0+2*b*n_p+Z_p**2)
     omega=E_e+E_p
-    res=q_p*A(b,n_e,n_p,Z_e,Z_p,E_e,E_p,q_z,q_p,omega)*omega*fe(E_e,mu,T)*fp(E_p,mu,T)
-    !res=A(b,n_e,n_p,Z_e,Z_p,E_e,E_p,q_z,q_p,omega)
+    res=q_p*A(b,n_e,n_p,Z_e,Z_p,E_e,E_p,q_z,q_p,omega)*omega*fe(E_e,mu,T)*fp(E_p,mu,T)   !==the function under the integral==!
   else
     res=0.d0
   end if
@@ -542,8 +611,9 @@ contains
   return
   end function fp
 
-
-  !==function A given by (24) in Kaminker 1992==!
+  !================================================================================================
+  ! Function A given by (24) in Kaminker 1992 ==!
+  !================================================================================================
   real*8 function A(b,n_i,n_f,Z_i,Z_f,E_i,E_f,q_z,q_p,omega)
   implicit none
   real*8,intent(in)::b,Z_i,Z_f,E_i,E_f,q_z,q_p,omega
@@ -562,9 +632,11 @@ contains
     Phi_plus=funPhi(n_f,n_i,u,1)
     Phi_min =funPhi(n_f,n_i,u,-1)
     Psi_plus=funPsi(n_f,n_i,u,1)
+!write(*,*)"#1",Psi_plus
     Psi_min =funPsi(n_f,n_i,u,-1)
 
     A1=Psi_plus*( 2*(E_i*E_f-Z_i*Z_f)**2+(E_i*E_f-Z_i*Z_f)*(2.d0+p_p_i2+p_p_f2-2*q_p**2)+q_p**2/2*(q_p**2-p_p_i2-p_p_f2-3.d0) )
+!write(*,*)"#2",A1,Psi_plus
     A1=A1+Phi_plus*( (E_i*E_f-Z_i*Z_f)*(1.d0+p_p_i2+p_p_f2) +1.d0+ 0.5d0*(p_p_i2+p_p_f2)*(3.d0-q_p**2+p_p_i2+p_p_f2) )
     A1=A1*(C_V_e**2+C_A_e**2)/E_i/E_f +2*A1*(C_V_o**2+C_A_o**2)/E_i/E_f
 
@@ -606,6 +678,7 @@ integer,intent(in)::n1,n2,sign
 real*8,intent(in)::u
 real*8::Fnn   !==function==!
   funPsi=(Fnn(n1-1,n2,u))**2+sign*(Fnn(n1,n2-1,u))**2
+  !write(*,*)"#0:",funPsi,Fnn(n1-1,n2,u),n1-1,n2,u
 return
 end function funPsi
 
