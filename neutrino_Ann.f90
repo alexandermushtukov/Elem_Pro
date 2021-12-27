@@ -12,9 +12,9 @@ real*8::IntNeutrinoAnn,x,Fnn  !==function==!
   200 format (8(es11.4,"   "),1(I6,"   "))
   201 format (7(es11.4,"   "),4(I6,"   "))
   202 format (1(A21),(es8.2))
-  b=0.7d0
+  b=0.8d0
   !write(file_name,202)"./res/res3_nu_MC2e6_b",b
-  write(file_name,202)"./res/res3_nu_MCnew_d",b
+  write(file_name,202)"./res/res4_nu_MCnew_d",b
   write(*,*)"# file_name=",file_name; write(*,*)
   open (unit = 20, file = file_name)
   write(20,*)"# b=",b
@@ -575,23 +575,38 @@ real*8,intent(in)::Z_e,Z_p,q_z,q_p,b,mu,T
 real*8::E_e,E_p,omega
 real*8::res
 
-!n_e=50
-!n_p=50
-!Z_e=27.13d0
-!Z_p=19.35d0
-!q_z=46.5d0
-!q_p=8.32d0
-!b=0.8d0
-!mu=4.47d0
-!T=0.74d0
+!n_e=12
+!n_p=2
+!Z_e=3.5456465591638029d0
+!Z_p=-1.2384556508395681d0
+!q_z=2.3071909083242348d0
+!q_p=0.39062599493478073d0
+!b=0.1d0
+!mu=6.0023483365949132d-4
+!T=0.19569471624266144d0
   if(q_p.ne.0.d0)then
     E_e=sqrt(1.d0+2*b*n_e+Z_e**2)
     E_p=sqrt(1.d0+2*b*n_p+Z_p**2)
     omega=E_e+E_p
     res=q_p*A(b,n_e,n_p,Z_e,Z_p,E_e,E_p,q_z,q_p,omega)*omega*fe(E_e,mu,T)*fp(E_p,mu,T)   !==the function under the integral==!
+    !write(*,*)"res: ",res,A(b,n_e,n_p,Z_e,Z_p,E_e,E_p,q_z,q_p,omega)
   else
     res=0.d0
   end if
+
+  if(isnan(res))then
+    open (unit = 20, file = "./res/resNaN", status = 'old',form='formatted',position="append")
+    write(20,*)"#IntNeutrinoAnn - NaN:",res,n_e,n_p,Z_e,Z_p,q_z,q_p,b,mu,T
+    !write(*,*)"#IntNeutrinoAnn - NaN:",res,n_e,n_p,Z_e,Z_p,q_z,q_p,b,mu,T
+    !write(*,*)"#### ",q_p,A(b,n_e,n_p,Z_e,Z_p,E_e,E_p,q_z,q_p,omega),omega,fe(E_e,mu,T),fp(E_p,mu,T)
+    close(20)
+    res=0.d0
+    !read(*,*)
+  !else
+  !  write(*,*)"#IntNeutrinoAnn - nonNaN:",res,n_e,n_p,Z_e,Z_p,q_z,q_p,b,mu,T
+  !  read(*,*)
+  end if
+
   IntNeutrinoAnn=res
 return
 contains
@@ -632,11 +647,9 @@ contains
     Phi_plus=funPhi(n_f,n_i,u,1)
     Phi_min =funPhi(n_f,n_i,u,-1)
     Psi_plus=funPsi(n_f,n_i,u,1)
-!write(*,*)"#1",Psi_plus
     Psi_min =funPsi(n_f,n_i,u,-1)
 
     A1=Psi_plus*( 2*(E_i*E_f-Z_i*Z_f)**2+(E_i*E_f-Z_i*Z_f)*(2.d0+p_p_i2+p_p_f2-2*q_p**2)+q_p**2/2*(q_p**2-p_p_i2-p_p_f2-3.d0) )
-!write(*,*)"#2",A1,Psi_plus
     A1=A1+Phi_plus*( (E_i*E_f-Z_i*Z_f)*(1.d0+p_p_i2+p_p_f2) +1.d0+ 0.5d0*(p_p_i2+p_p_f2)*(3.d0-q_p**2+p_p_i2+p_p_f2) )
     A1=A1*(C_V_e**2+C_A_e**2)/E_i/E_f +2*A1*(C_V_o**2+C_A_o**2)/E_i/E_f
 
@@ -645,7 +658,6 @@ contains
 
     A3=( 2*omega**2-2*q_z**2-3*q_p**2 )*Psi_min + (p_p_i2-p_p_f2)*Phi_min
     A3=A3*(E_i*Z_f-E_f*Z_i)*C_V_e*C_A_e/E_i/E_f +2*A3*(E_i*Z_f-E_f*Z_i)*C_V_o*C_A_o/E_i/E_f
-
     A=A1+A2-A3
   return
   end function A
@@ -664,6 +676,7 @@ integer,intent(in)::n1,n2,sign
 real*8,intent(in)::u
 real*8::Fnn   !==function==!
   funPhi=(Fnn(n1-1,n2-1,u))**2+sign*(Fnn(n1,n2,u))**2
+  !write(*,*)"#4",funPhi,Fnn(n1,n2,u),n1,n2,u
 return
 end function funPhi
 
