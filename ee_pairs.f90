@@ -174,7 +174,6 @@ end function n_p30_max
 ! Chemical potential is in keV.
 !===================================================================================================
 subroutine EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu,n_max,n_max_e,n_max_p,Z_e_max,Z_p_max)
-!use EE_pairs_help
 implicit none
 real*8,intent(in)::b,n_e_ini30,TkeV
 real*8::n_e30,n_p30,mu1,mu2,mu
@@ -348,7 +347,6 @@ contains
           else
             n_max_p=i
           end if
-!write(*,*)"#a2",n_p30,n_p30_add,n_p30_add/(n_p30/i)
           n_p30     = n_p30+n_p30_add
         else
           call int_ImproperInt_simpson(Ip_mag2,0.d0,1.d-3,eps,n_p30_add,b_final)
@@ -402,7 +400,7 @@ contains
   real*8::E,t
     E=sqrt(1.d0+p_z**2+2*b_mod*n_mod)
     t=TkeV_mod*1.d3*11600.d0/5.93d9
-    Ie_mag=1.d0/(exp((E-mu_mod/511.d0)/t)+1.d0)
+    Ie_mag=1.d0/(exp((E-mu_mod/511)/t)+1.d0)
     !write(*,*)Ie_mag    
   return
   end function Ie_mag
@@ -416,7 +414,7 @@ contains
   real*8::E,t
     E=sqrt(1.d0+p_z**2+2*b_mod*n_mod)
     t=TkeV_mod*1.d3*11600.d0/5.93d9
-    Ip_mag=1.d0/(exp((E+mu_mod/511.d0)/t)+1.d0)   !!!!!!+1.d0 in Kaminker!!!
+    Ip_mag=1.d0/(exp((E+mu_mod/511)/t)+1.d0)   !!!!!!+1.d0 in Kaminker!!!
   return
   end function Ip_mag
 
@@ -530,7 +528,7 @@ contains
   real*8::E,t
     E=sqrt(1.d0+p_z**2+2*b*n)
     t=TkeV*1.d3*11600.d0/5.93d9
-    Ip_mag=1.d0/(exp((E+mu/511.d0)/t)+1.d0)   !!!!!!+1.d0 in Kaminker!!!
+    Ip_mag=1.d0/(exp((E+mu/511)/t)+1.d0)   !!!!!!+1.d0 in Kaminker!!!
   return
   end function Ip_mag
 
@@ -555,7 +553,7 @@ real*8::Z_e_max(5000),Z_p_max(5000)
   i=1
   do while(i.le.nn)
     p=p_min+dp*(i-1)
-    res_M=MaxwellRel1d_gen(p,TkeV/511.d0,0.d0)
+    res_M=MaxwellRel1d_gen(p,TkeV/511,0.d0)
     res0=EE_distribution(p,0,b,TkeV,mu,1)
     res1=EE_distribution(p,1,b,TkeV,mu,1)
     res2=EE_distribution(p,2,b,TkeV,mu,1)
@@ -585,7 +583,7 @@ integer::i,g_n
 real*8::int_simpson_recursive_mas !==function==!
 real*8::mas
 dimension mas(4)
-  p_z_max=sqrt((TkeV/511.d0)**2+2.d0*(TkeV/511.d0))*5
+  p_z_max=sqrt((TkeV/511)**2+2*(TkeV/511))*5
   res=0.d0
   i=0
   do while(i.le.n_max)
@@ -627,7 +625,7 @@ contains
   real*8::E,t
     E=sqrt(1.d0+p_z**2+2*b*n)
     t=TkeV*1.d3*11600.d0/5.93d9
-    Ie_mag=1.d0/(exp((E-mu/511.d0)/t)+1.d0)
+    Ie_mag=1.d0/(exp((E-mu/511)/t)+1.d0)
 !write(*,*)"aqd ",Ie_mag,p_z,b,n,mu,TkeV
 !read(*,*)
   return
@@ -642,7 +640,7 @@ contains
   real*8::E,t
     E=sqrt(1.d0+p_z**2+2*b*n)
     t=TkeV*1.d3*11600.d0/5.93d9
-    Ip_mag=1.d0/(exp((E+mu/511.d0)/t)+1.d0)   !!!!!!+1.d0 in Kaminker!!!
+    Ip_mag=1.d0/(exp((E+mu/511)/t)+1.d0)   !!!!!!+1.d0 in Kaminker!!!
   return
   end function Ip_mag
 

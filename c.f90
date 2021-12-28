@@ -15,6 +15,7 @@ integer::det,n_max,n_max_e,n_max_p,n_sum_max
   !call Test_Compt_Ave()
   !call test_Fnn()
   call Test_NeutrinoEmAnnih()
+  !call Test_NeutrinoEmSyn()
   !call test_ee_pairs()
   !call Test_ComptPressure_Max()
   !call Test_ComptPressure01()

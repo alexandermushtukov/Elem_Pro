@@ -12,18 +12,18 @@ real*8::IntNeutrinoAnn,x,Fnn  !==function==!
   200 format (8(es11.4,"   "),1(I6,"   "))
   201 format (7(es11.4,"   "),4(I6,"   "))
   202 format (1(A21),(es8.2))
-  b=0.8d0
+  b=0.9d0
   !write(file_name,202)"./res/res3_nu_MC2e6_b",b
   write(file_name,202)"./res/res4_nu_MCnew_d",b
   write(*,*)"# file_name=",file_name; write(*,*)
   open (unit = 20, file = file_name)
   write(20,*)"# b=",b
-  write(20,*)"# Format: b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,res/Q23_app,n_sum_max,det_res"
+  write(20,*)"# Format: b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,Q23_app,res/Q23_app,n_sum_max,n_max_e,n_max_p,det_res"
   write(20,*)
   close(20)
 
   !lg_TkeV=2.d0
-  lg_TkeV=2.5d0
+  lg_TkeV=2.6d0
   !do while(lg_TkeV.lt.2.5d0)
   do while(lg_TkeV.le.3.d0)
     T_keV=10.d0**lg_TkeV
@@ -665,39 +665,6 @@ contains
 end function IntNeutrinoAnn
 
 
-
-
-!==================================================================================
-! Kaminker 1992 (16)
-!==================================================================================
-real*8 function funPhi(n1,n2,u,sign)
-implicit none
-integer,intent(in)::n1,n2,sign
-real*8,intent(in)::u
-real*8::Fnn   !==function==!
-  funPhi=(Fnn(n1-1,n2-1,u))**2+sign*(Fnn(n1,n2,u))**2
-  !write(*,*)"#4",funPhi,Fnn(n1,n2,u),n1,n2,u
-return
-end function funPhi
-
-
-
-!==================================================================================
-! Kaminker 1992 (16)
-!==================================================================================
-real*8 function funPsi(n1,n2,u,sign)
-implicit none
-integer,intent(in)::n1,n2,sign
-real*8,intent(in)::u
-real*8::Fnn   !==function==!
-  funPsi=(Fnn(n1-1,n2,u))**2+sign*(Fnn(n1,n2-1,u))**2
-  !write(*,*)"#0:",funPsi,Fnn(n1-1,n2,u),n1-1,n2,u
-return
-end function funPsi
-
-
-
-
 !================================================================================================================
 ! N  - total number of points for summation
 ! N1 - number of points which is taken to calculate approximate summ
@@ -842,6 +809,7 @@ return
 end subroutine sum_over_incomplete_array
 
 
+
 !========================================================================================================
 ! The subroutine calculates the summ over the elements of array fun(N), which total length is N, but where
 ! only N1<N elements are known. The numbers of these elements and fun(i) there are reprennted in first N1
@@ -899,7 +867,6 @@ real*8::sum_array,sum_add,a,b,c
     i=i+1
   end do
   sum_array=sum_array+fun(N1)
-
 return
 contains
   !===========================================================================================
@@ -915,7 +882,7 @@ contains
   return
   end subroutine get_parabola_coeff
 end subroutine sum_over_incomplete_array2
-
+!=============================================================================================
 
 
 

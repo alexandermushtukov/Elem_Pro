@@ -202,3 +202,33 @@ real*8::funAi  !==functions==!
   Fnn_app_q_classic=res
 return
 end function Fnn_app_q_classic
+
+
+
+!==================================================================================
+!  Kaminker 1992 (16)
+!==================================================================================
+real*8 function funPhi(n1,n2,u,sign)
+implicit none
+integer,intent(in)::n1,n2,sign
+real*8,intent(in)::u
+real*8::Fnn   !==function==!
+  funPhi=(Fnn(n1-1,n2-1,u))**2+sign*(Fnn(n1,n2,u))**2
+  !write(*,*)"#4",funPhi,Fnn(n1,n2,u),n1,n2,u
+return
+end function funPhi
+
+
+
+!==================================================================================
+!  Kaminker 1992 (16)
+!==================================================================================
+real*8 function funPsi(n1,n2,u,sign)
+implicit none
+integer,intent(in)::n1,n2,sign
+real*8,intent(in)::u
+real*8::Fnn   !==function==!
+  funPsi=(Fnn(n1-1,n2,u))**2+sign*(Fnn(n1,n2-1,u))**2
+  !write(*,*)"#0:",funPsi,Fnn(n1-1,n2,u),n1-1,n2,u
+return
+end function funPsi
