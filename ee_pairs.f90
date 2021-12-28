@@ -165,20 +165,21 @@ end function n_p30_max
 
 
 !===================================================================================================
-! The subroutine calculates the number dencities of electron and positron pairs 
-! at a given temperature TkeV, B-field strength b, and initial number dencity of electrons n_e_ini30.
-! Parameters: 
-! n_e_ini30 - the initial nuber density of electrons
-! TkeV - the temperature in keV.
-! Finally we will get: n_e_ini30=n_e30-n_p30
-! Chemical potential is in keV.
+! The subroutine calculates the number dencities of electron and positron pairs: n_e30, n_p30;
+! chemical potential mu in [keV], and returns the maximal longitudial momenta along the field lines
+! for each Landau level. The maximal Landau level numbers for electrons and positrons: n_max_e,n_max_p.
+! Parameters:
+!   b - magnetic field strength
+!   n_e_ini30 - the initial nuber density of electrons
+!   TkeV - temperature in keV.
+! Condition: n_e_ini30=n_e30-n_p30
 !===================================================================================================
 subroutine EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu,n_max,n_max_e,n_max_p,Z_e_max,Z_p_max)
 implicit none
 real*8,intent(in)::b,n_e_ini30,TkeV
 real*8::n_e30,n_p30,mu1,mu2,mu
 integer::det,n_max,n_max_e,n_max_p,i
-real*8::Z_e_max(5000),Z_p_max(5000)
+real*8::Z_e_max(5000),Z_p_max(5000)      !==fix it==! : reduce and adopt the size of arrays
 
   n_max   = 0
   n_max_e = 0

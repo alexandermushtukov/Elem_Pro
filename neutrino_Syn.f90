@@ -12,9 +12,9 @@ real*8::IntNeutrinoAnn,x,Fnn  !==function==!
   200 format (8(es11.4,"   "),1(I6,"   "))
   201 format (5(es11.4,"   "),4(I6,"   "))
   202 format (1(A21),(es8.2))
-  b=2.d0
+  b=0.05d0
   !write(file_name,202)"./res/res3_nu_MC2e6_b",b
-  write(file_name,202)"./res/res1_nu_EmSyn_a",b
+  write(file_name,202)"./res/res2_nu_EmSyn_a",b
   write(*,*)"# file_name=",file_name; write(*,*)
   open (unit = 20, file = file_name)
   write(20,*)"# b=",b
@@ -36,7 +36,7 @@ real*8::IntNeutrinoAnn,x,Fnn  !==function==!
       lg_n_e_ini30=-5.d0
     !end if
 
-    do while(lg_n_e_ini30.le.2.d0)
+    do while(lg_n_e_ini30.le.1.d0) !2.d0)
       n_e_ini30=10.d0**lg_n_e_ini30
       call NeutrinoSyn(b,T_keV,n_e_ini30,Q23,mu_keV,n_max_e,n_max_p)
       open(unit = 20, file = file_name, status = 'old',form='formatted',position="append")
@@ -49,7 +49,7 @@ real*8::IntNeutrinoAnn,x,Fnn  !==function==!
       lg_n_e_ini30=lg_n_e_ini30+0.1d0
     end do
     lg_TkeV=lg_TkeV+2.d-2
-    write(*,*)
+    !write(*,*)
   end do
 
 return
@@ -66,11 +66,11 @@ end subroutine Test_NeutrinoEmSyn
 ! res is represented in units of [1.e23 erg/s/cm^3]
 !==================================================================================================
 subroutine NeutrinoSyn(b,TkeV,n_e_ini30,res,mu_keV,n_max_e,n_max_p)
-use omp_lib
+!use omp_lib
 implicit none
 real*8,intent(in)::b,TkeV,n_e_ini30
 integer::n_i,n_f,det,n_max,n_max_e,n_max_p,det_part,det_n,det_sim
-real*8::res,Z1,Z2,T,mu,mu_keV,f1,f2,eps,f,f_i,n_e30,n_p30,mas(1000),Z_e_max,Z_p_max
+real*8::res,Z1,Z2,T,mu,mu_keV,f1,f2,eps,f,f_i,n_e30,n_p30,mas(1000),Z_e_max(5000),Z_p_max(5000)
 real*8::pi=3.141592653589793d0
 integer::ifEven    !==function==!
 real*8::sum_array  !==function==!
@@ -79,7 +79,7 @@ real*8::sum_array  !==function==!
   eps=2.d-2
   
   !==getting the actual chemical potential==!
-  call EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu_keV,n_max, n_max_e,n_max_p,Z_e_max,Z_p_max)
+  call EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu_keV,n_max,n_max_e,n_max_p,Z_e_max,Z_p_max)
   T=TkeV/511
   mu=mu_keV/511
 
@@ -105,7 +105,9 @@ real*8::sum_array  !==function==!
           Z1=2*Z1
           Z2=2*Z2
           f2=NeutrinoSyn_intZ(b,T,n_i,n_f,Z1,Z2,mu,det_part)
-          if(((abs((f2-f1)/f2)).lt.eps).or.(Z2.gt.1000).or.(f2.eq.0.d0))then
+          if(((abs((f2-f1)/f2)).lt.eps)&
+            .or.( (Z2.gt.Z_e_max(n_i+1)).and.(det_part.eq.1) )&
+            .or.( (Z2.gt.Z_p_max(n_i+1)).and.(det_part.ne.1) ).or.(f2.eq.0.d0))then
             det=1
           end if
         end do
@@ -114,7 +116,7 @@ real*8::sum_array  !==function==!
         f_i=f_i+f
         res=res+f
         if( (det_sim.eq.1) .and. ((f*(n_i-n_f-1)).le.(eps*f_i)) )then
-          n_f=n_i
+          n_f=n_f+1!n_i
         else
           n_f=n_f+1
         end if
@@ -126,10 +128,11 @@ real*8::sum_array  !==function==!
                ((sum_array(mas,1000,(n_i+1)/2,n_i+1)/sum_array(mas,1000,1,n_i+1)).lt.5.d-2))then
           det_n=13
         end if
-        if(( (det_part.eq.1).and.(n_i.ge.n_max_e) ).or.( (det_part.ne.1).and.(n_i.ge.n_max_p) ))then
-          det=14
-        end if
       end if
+      if(( (det_part.eq.1).and.(n_i.ge.n_max_e) ).or.( (det_part.ne.1).and.(n_i.ge.n_max_p) ))then
+        det_n=14
+      end if
+
       n_i=n_i+1
     end do
     !if(det_part.eq.1)then
