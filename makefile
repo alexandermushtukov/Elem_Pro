@@ -2,8 +2,8 @@ objects =	./obj/c.o \
 		./obj/neutrino.o \
 		./obj/electron_in_BF.o \
 		./obj/neutrino_Ann.o \
-		./obj/neutrino_Syn.o \
-		./obj/ee_pairs.o #\
+		./obj/neutrino_Syn.o #\
+		#./obj/ee_pairs.o #\
 		#./obj/pressure.o
 
 objects_math_fnlib = ./obj/mf_fnlib_ai.o \
@@ -53,7 +53,9 @@ objects_math =	./obj/mf_algebra_polinom.o \
 
 objects_phys =	./obj/PhFun_eMaxvell.o \
 		./obj/PhFun_ComptonBF_cons_laws.o \
-		./obj/PhFun_blackbody.o
+		./obj/PhFun_blackbody.o \
+		./obj/PhFun_ee_pairs.o 
+
 
 objects_astro =	./obj/af_ref_frame.o
 
@@ -94,6 +96,8 @@ c : $(objects) $(objects_math) $(objects_phys)  $(objects_astro)
 	gfortran -c -o ./obj/af_ref_frame.o ../AstroFun/af_ref_frame.f90
 
 
+./obj/PhFun_ee_pairs.o : ../PhFun/PhFun_ee_pairs.f90	
+	gfortran -c -o ./obj/PhFun_ee_pairs.o ../PhFun/PhFun_ee_pairs.f90
 ./obj/PhFun_eMaxvell.o : ../PhFun/PhFun_eMaxvell.f90	
 	gfortran -c -o ./obj/PhFun_eMaxvell.o ../PhFun/PhFun_eMaxvell.f90
 ./obj/PhFun_ComptonBF_cons_laws.o : ../PhFun/PhFun_ComptonBF_cons_laws.f90	
