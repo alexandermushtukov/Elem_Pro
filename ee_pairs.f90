@@ -684,4 +684,28 @@ real*8::n30
   n30=1.766d0*2.d0*x**3*(1.d0-(0.5d0)**3+(0.3333d0)**3-(0.25)**3+(0.2d0)**3)
 return
 end subroutine EE_pairs_app2
+!===================================================================================
 
+
+!=========================================================================
+! The function returns Fermi momentum in units of [m_{e}c]
+!=========================================================================
+real*8 function p_fermi(rho,Z,A)
+implicit none
+real*8,intent(in)::rho,Z,A
+  p_fermi=1.d-2* (rho*Z/A)**(1.d0/3)
+return
+end function p_fermi
+!========================================================================
+
+
+!=========================================================================
+! The function returns Fermi temperature for electrons in units of [keV].
+!=========================================================================
+real*8 function T_fermi(rho,Z,A)
+implicit none
+real*8,intent(in)::rho,Z,A
+  T_fermi=0.0256d0* (rho*Z/A)**(2.d0/3)
+return
+end function T_fermi
+!=========================================================================
