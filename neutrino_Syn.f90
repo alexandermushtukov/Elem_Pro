@@ -4,17 +4,18 @@
 subroutine Test_NeutrinoEmSyn()
 implicit none
 real*8::T_kev,b,T10,lg_TkeV,B12,Q23_app,n_e_ini30,lg_n_e_ini30,Q23,mu_keV
-integer::n_sum_max,n_max_e,n_max_p,det_res
+integer::n_sum_max,n_max_e,n_max_p,det_res,num_stream,i,det_omp
 character(len=100):: file_name
-real*8::Z_e_max(5000),Z_p_max(5000)
+real*8::Z_e_max(5000),Z_p_max(5000),res_omp(10,5)
 real*8::IntNeutrinoAnn,x,Fnn  !==function==!
+real*8::n_e_ini30_task,Q23_task,mu_keV_task
+integer::n_max_e_task,n_max_p_task
 
   200 format (8(es11.4,"   "),1(I6,"   "))
   201 format (5(es11.4,"   "),4(I6,"   "))
-  202 format (1(A21),(es8.2))
-  b=0.05d0
-  !write(file_name,202)"./res/res3_nu_MC2e6_b",b
-  write(file_name,202)"./res/res2_nu_EmSyn_a",b
+  202 format (1(A22),(es8.2))
+  b=2.d0
+  write(file_name,202)"./res/res2_nu_EmSyn_bb",b
   write(*,*)"# file_name=",file_name; write(*,*)
   open (unit = 20, file = file_name)
   write(20,*)"# b=",b
@@ -22,32 +23,37 @@ real*8::IntNeutrinoAnn,x,Fnn  !==function==!
   write(20,*)
   close(20)
 
-  lg_TkeV=1.d0
-  !lg_TkeV=2.5d0
-  do while(lg_TkeV.lt.2.d0)
-  !do while(lg_TkeV.le.3.d0)
+  !==set OpenMP parameters====!
+  det_omp=1         !== determins if we use OpenMP: det_opm=0 - no , det_opm=1 - yes, we use ==!
+  num_stream=12 !10
+  !===========================!
+
+  !lg_TkeV=1.d0
+  lg_TkeV=2.d0
+  !do while(lg_TkeV.lt.2.d0)
+  do while(lg_TkeV.le.3.d0)
     T_keV=10.d0**lg_TkeV
     T10=T_keV*1.1602d-3 !*1.1602d-3
     B12=b*44.12d0
 
-    !if(lg_TkeV.eq.2.58d0)then
-    !  lg_n_e_ini30=1.8d0
+    !if(lg_TkeV.eq.2.18d0)then
+    !  lg_n_e_ini30=0.2d0
     !else
-      lg_n_e_ini30=-5.d0
+      lg_n_e_ini30=1.1d0
+      !lg_n_e_ini30=-5.d0
     !end if
-
-    do while(lg_n_e_ini30.le.1.d0) !2.d0)
+    do while(lg_n_e_ini30 .le. 2.0013d0)
       n_e_ini30=10.d0**lg_n_e_ini30
-      call NeutrinoSyn(b,T_keV,n_e_ini30,Q23,mu_keV,n_max_e,n_max_p)
+      call NeutrinoSyn(b,T_keV,n_e_ini30,Q23,mu_keV,n_max_e,n_max_p,det_omp,num_stream)
       open(unit = 20, file = file_name, status = 'old',form='formatted',position="append")
       !write(*,200)b,lg_TkeV,T_keV,lg_n_e_ini30,n_e_ini30,res,Q23_app,res/Q23_app,n_sum_max
       !write(*,201)b,T_keV,n_e_ini30,mu_keV,res,Q23_app,res/Q23_app,n_sum_max
       write(*,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,n_max_e,n_max_p!,det_res
       write(20,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23,n_max_e,n_max_p!,det_res
-
       close(20)
       lg_n_e_ini30=lg_n_e_ini30+0.1d0
     end do
+
     lg_TkeV=lg_TkeV+2.d-2
     !write(*,*)
   end do
@@ -65,15 +71,18 @@ end subroutine Test_NeutrinoEmSyn
 ! TkeV - temperature in [keV]
 ! res is represented in units of [1.e23 erg/s/cm^3]
 !==================================================================================================
-subroutine NeutrinoSyn(b,TkeV,n_e_ini30,res,mu_keV,n_max_e,n_max_p)
-!use omp_lib
+subroutine NeutrinoSyn(b,TkeV,n_e_ini30,res,mu_keV,n_max_e,n_max_p,det_omp,num_stream)
+use omp_lib
 implicit none
 real*8,intent(in)::b,TkeV,n_e_ini30
-integer::n_i,n_f,det,n_max,n_max_e,n_max_p,det_part,det_n,det_sim
+integer,intent(in)::det_omp,num_stream    !==related to OpneMP==!
+integer::n_i,n_f,det,n_max,n_max_e,n_max_p,det_part,det_n,det_sim,n_steps_omp,omp_step
 real*8::res,Z1,Z2,T,mu,mu_keV,f1,f2,eps,f,f_i,n_e30,n_p30,mas(1000),Z_e_max(5000),Z_p_max(5000)
 real*8::pi=3.141592653589793d0
 integer::ifEven    !==function==!
 real*8::sum_array  !==function==!
+integer::det_task,n_f_task
+real*8::Z1_task,Z2_task,f1_task,f2_task
 
   det_sim=1    !== det_sim=1 - we do simplify calculations ==!
   eps=2.d-2
@@ -82,6 +91,7 @@ real*8::sum_array  !==function==!
   call EE_pairs(b,n_e_ini30,TkeV,n_e30,n_p30,mu_keV,n_max,n_max_e,n_max_p,Z_e_max,Z_p_max)
   T=TkeV/511
   mu=mu_keV/511
+  !write(*,*)"mu=",mu_keV,b,n_e_ini30,TkeV,n_max,n_max_e,n_max_p
 
   res=0.d0
   !==making a sum over the particle type: electrons and positrons==!
@@ -92,37 +102,69 @@ real*8::sum_array  !==function==!
     det_n=11
     do while(det_n.eq.11)
       f_i=0.d0
-      n_f=0
 
-      do while(n_f.lt.n_i)
-        !==integration over Z==!
-        det=11
-        Z1= -sqrt(T**2+2*T)
-        Z2=  sqrt(T**2+2*T) 
-        f2=NeutrinoSyn_intZ(b,T,n_i,n_f,Z1,Z2,mu,det_part)
-        do while(det.eq.11)
-          f1=f2
-          Z1=2*Z1
-          Z2=2*Z2
+      if(det_omp.eq.0)then
+        !==calculation without OpenMP==!
+        n_f=0
+        do while(n_f.lt.n_i)
+          !==integration over Z==!
+          det=11
+          Z1= -sqrt(T**2+2*T)
+          Z2=  sqrt(T**2+2*T)
           f2=NeutrinoSyn_intZ(b,T,n_i,n_f,Z1,Z2,mu,det_part)
-          if(((abs((f2-f1)/f2)).lt.eps)&
-            .or.( (Z2.gt.Z_e_max(n_i+1)).and.(det_part.eq.1) )&
-            .or.( (Z2.gt.Z_p_max(n_i+1)).and.(det_part.ne.1) ).or.(f2.eq.0.d0))then
-            det=1
-          end if
-        end do
-        !==end integration over Z==!
-        f=f2
-        f_i=f_i+f
-        res=res+f
-        if( (det_sim.eq.1) .and. ((f*(n_i-n_f-1)).le.(eps*f_i)) )then
-          n_f=n_f+1!n_i
-        else
+          do while(det.eq.11)
+            f1=f2
+            Z1=2*Z1
+            Z2=2*Z2
+            f2=NeutrinoSyn_intZ(b,T,n_i,n_f,Z1,Z2,mu,det_part)
+            if(((abs((f2-f1)/f2)).lt.eps)&
+              .or.( (Z2.gt.Z_e_max(n_i+1)).and.(det_part.eq.1) )&
+              .or.( (Z2.gt.Z_p_max(n_i+1)).and.(det_part.ne.1) ).or.(f2.eq.0.d0))then
+              det=1
+            end if
+          end do
+          !==end integration over Z==!
+          f=f2
+          f_i=f_i+f
+          !res=res+f
           n_f=n_f+1
-        end if
-      end do
-
-      mas(n_i+1)=f_i
+        end do
+      else
+        !==we use OpenMP==!
+        n_steps_omp=n_i/num_stream
+        omp_step=0
+        do while(omp_step.le.n_steps_omp)
+           if(omp_step.le.n_steps_omp)then
+             call omp_set_num_threads(num_stream)
+           else
+             call omp_set_num_threads(mod(n_i,num_stream))
+           end if
+           !$omp parallel private(det_task,n_f_task,Z1_task,Z2_task,f1_task,f2_task) reduction(+: f_i)
+               n_f_task = omp_step*num_stream + omp_get_thread_num()
+               det_task=11
+               Z1_task= -sqrt(T**2+2*T)
+               Z2_task=  sqrt(T**2+2*T)
+               f2_task=NeutrinoSyn_intZ(b,T,n_i,n_f_task,Z1_task,Z2_task,mu,det_part)
+               do while(det_task.eq.11)
+                 f1_task=f2_task
+                 Z1_task=2*Z1_task
+                 Z2_task=2*Z2_task
+                 f2_task=NeutrinoSyn_intZ(b,T,n_i,n_f_task,Z1_task,Z2_task,mu,det_part)
+                 if(((abs((f2_task-f1_task)/f2_task)).lt.eps)&
+                   .or.( (Z2_task.gt.Z_e_max(n_i+1)).and.(det_part.eq.1) )&
+                   .or.( (Z2_task.gt.Z_p_max(n_i+1)).and.(det_part.ne.1) ).or.(f2_task.eq.0.d0))then
+                   det_task=1
+                 end if
+               end do
+               !==end integration over Z==!
+               f_i=f2_task
+               !write(*,*)n_f_task, omp_step , num_stream , omp_get_thread_num(),f2_task
+           !$omp end parallel
+           omp_step=omp_step+1
+        end do
+      end if
+      res=res+f_i
+      mas(n_i+1)=f_i     !==saving the contribution of transitions from i-th level==!
       if((n_i.gt.4).and.(ifEven(n_i+1).eq.0))then
         if((sum_array(mas,1000,1,n_i+1).eq.0.d0).or.&
                ((sum_array(mas,1000,(n_i+1)/2,n_i+1)/sum_array(mas,1000,1,n_i+1)).lt.5.d-2))then
@@ -135,17 +177,10 @@ real*8::sum_array  !==function==!
 
       n_i=n_i+1
     end do
-    !if(det_part.eq.1)then
-    !  n_max_e=n_i
-    !else
-    !  n_max_p=n_i
-    !end if
     det_part=det_part+1
   end do
 
-  res=res*b/3/(2*pi)**5   !==10^(23)==!
-  !write(*,*)b,TkeV,n_e_ini30,res
-  !write(*,*)"# Q23=",res
+  res=res*b/3/(2*pi)**5
 return
 contains
 
@@ -194,7 +229,7 @@ contains
   integer::i,nn_,nn_max,det
   real*8::SimpsonCoeff  !==function==!
     eps=2.d-2
-    nn_max=int(1.e6) !1000000
+    nn_max=int(1.e6)
     res=0.d0
     dZ=(Z2-Z1)/(nn-1)
     res=0.d0
