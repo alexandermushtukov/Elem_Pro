@@ -14,11 +14,13 @@ integer::det,n_max,n_max_e,n_max_p,n_sum_max
   !call test_Ai()
   !call Test_Compt_Ave()
   !call test_Fnn()
+  call reconstruct_nu_DB()
   !call Test_NeutrinoEmAnnih()
-  call Test_NeutrinoEmSyn()
+  !call Test_NeutrinoEmSyn()
   !call test_ee_pairs()
   !call Test_ComptPressure_Max()
   !call Test_ComptPressure01()
+  !write(*,*)3/2,4/2,5/2,6/2, mod(5,3)
   goto 122
   !call test_IntAnn(); goto 122
   !call test_Ai(); goto 122
@@ -245,4 +247,55 @@ return
 end subroutine
 
 
+
+!===============================================================================================================
+! The subroutine combines calculations of different processes of neutrino emission.
+!===============================================================================================================
+subroutine reconstruct_nu_DB()
+implicit none
+real*8::b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23_ann,Q23_syn,Q23_beta(3)
+real*8::h1(10)
+integer::i,det,n_lines,h2(10)
+character*100::file_name_ann,file_name_syn,file_name_beta
+character*100::text_line
+
+    201 format (8(es11.4,"   "))
+   
+    file_name_ann ="./neutrino_DB/res_b_2.00E+00"
+    file_name_syn ="./neutrino_DB/res2_nu_EmSyn_a2.00E+00"
+    file_name_beta="./neutrino_DB/res_b_2.00E+00.dat"
+
+    !==getting a number of lines in the file==!
+    open(unit = 24, file = file_name_ann , action='read')
+    read(24,*)text_line; read(24,*)text_line
+    i=0
+    det=11
+    do while(0.eq.0)
+      read(24,*,END=200)b,lg_TkeV,lg_n_e_ini30
+      i=i+1
+    end do
+    200 continue
+    close(24)
+    n_lines=i
+    !==now we know a number of lines in the file==!
+
+    open(unit = 24, file = file_name_ann , action='read')
+    open(unit = 25, file = file_name_syn , action='read')
+    open(unit = 26, file = file_name_beta, action='read')
+    read(24,*)text_line; read(24,*)text_line
+    read(25,*)text_line; read(25,*)text_line
+    read(26,*)text_line; read(26,*)text_line
+    i=1
+    do while(i.le.n_lines)
+      read(24,*)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23_ann
+      read(25,*)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23_syn
+      read(26,*)h1(1),h2(1),Q23_beta(1),h2(2),Q23_beta(2),h2(3),Q23_beta(3)
+
+      write(*,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23_ann,Q23_syn,Q23_beta(1)+Q23_beta(2)+Q23_beta(3)
+
+      i=i+1
+    end do
+    close(24); close(25); close(26)
+return
+end subroutine reconstruct_nu_DB
 
