@@ -253,13 +253,13 @@ end subroutine
 !===============================================================================================================
 subroutine reconstruct_nu_DB()
 implicit none
-real*8::b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23_ann,Q23_syn,Q23_beta(3)
+real*8::b,lg_TkeV,lg_TkeV_,lg_n_e_ini30,mu_keV,Q23_ann,Q23_syn,Q23_beta(3)
 real*8::h1(10)
-integer::i,det,n_lines,h2(10)
+integer::i,det,n_lines,h2(10),det_pro
 character*100::file_name_ann,file_name_syn,file_name_beta
 character*100::text_line
 
-    201 format (8(es11.4,"   "))
+    201 format (7(es10.3,"   "),1(I6,"   "))
    
     file_name_ann ="./neutrino_DB/res_b_2.00E+00"
     file_name_syn ="./neutrino_DB/res2_nu_EmSyn_a2.00E+00"
@@ -279,6 +279,7 @@ character*100::text_line
     n_lines=i
     !==now we know a number of lines in the file==!
 
+    lg_TkeV_=1.d0
     open(unit = 24, file = file_name_ann , action='read')
     open(unit = 25, file = file_name_syn , action='read')
     open(unit = 26, file = file_name_beta, action='read')
@@ -291,7 +292,21 @@ character*100::text_line
       read(25,*)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23_syn
       read(26,*)h1(1),h2(1),Q23_beta(1),h2(2),Q23_beta(2),h2(3),Q23_beta(3)
 
-      write(*,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23_ann,Q23_syn,Q23_beta(1)+Q23_beta(2)+Q23_beta(3)
+      if(lg_TkeV.ne.lg_TkeV_)then
+        lg_TkeV_=lg_TkeV
+        write(*,*)
+      end if
+      det_pro=1
+      if( (Q23_ann.gt.Q23_syn).and.(Q23_ann.gt.Q23_beta(1)) )then
+        det_pro=1
+      end if
+      if( (Q23_syn.gt.Q23_ann).and.(Q23_syn.gt.Q23_beta(1)) )then
+        det_pro=2
+      end if
+      if( (Q23_beta(1).gt.Q23_ann).and.(Q23_beta(1).gt.Q23_syn) )then
+        det_pro=3
+      end if
+      write(*,201)b,lg_TkeV,lg_n_e_ini30,mu_keV,Q23_ann,Q23_syn,Q23_beta(1),det_pro!+Q23_beta(2)+Q23_beta(3)
 
       i=i+1
     end do
